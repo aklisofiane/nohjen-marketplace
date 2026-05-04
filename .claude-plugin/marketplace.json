@@ -1,0 +1,19 @@
+{
+  "name": "nohjen-marketplace",
+  "owner": {
+    "name": "Sofiane Akli",
+    "email": "aklisof@gmail.com"
+  },
+  "metadata": {
+    "description": "Nohjen's marketplace of Claude Code plugins: skills, agents, commands, and hooks.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "doc-generator",
+      "source": "./plugins/doc-generator",
+      "description": "Generate or update project documentation from the latest git commit or a list of files. Produces concise, high-signal markdown that slots into an existing docs/ folder.",
+      "category": "documentation"
+    }
+  ]
+}

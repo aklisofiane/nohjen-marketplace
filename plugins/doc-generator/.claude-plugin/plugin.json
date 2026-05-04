@@ -1,0 +1,9 @@
+{
+  "name": "doc-generator",
+  "version": "0.1.0",
+  "description": "Generate or update project documentation from the latest git commit or a list of files. Produces concise, high-signal markdown that slots into an existing docs/ folder.",
+  "author": {
+    "name": "Sofiane Akli",
+    "email": "aklisof@gmail.com"
+  }
+}
