@@ -69,7 +69,9 @@ Keep each option to ~5-8 lines total. If you're writing more, you're either over
 
 ## Visual sketches (UI / layout / flow questions)
 
-When an option's *shape* — layout, spatial arrangement, or flow ordering — is what distinguishes it from another option, add a small inline ASCII sketch (≤10 lines) above the `How:` line. This applies to UI layouts, navigation structures, modal vs. inline patterns, and before/after refactors.
+When an option's *shape* — layout, spatial arrangement, or flow ordering — is what distinguishes it from another option, add an inline ASCII sketch above the `How:` line. This applies to UI layouts, navigation structures, modal vs. inline patterns, and before/after refactors.
+
+Give the sketch room to breathe — pad inside boxes, add a blank line above and below, and put annotations on their own line beneath the element they describe (not trailing it). A cramped sketch is harder to read than a generous one. Size by what the sketch needs: a flow diagram can be 4 lines; a UI mockup is usually 8-15. If a sketch is getting long, the fix is almost always **zoom into the part that differs between options** rather than redrawing chrome both options share.
 
 Skip sketches when the difference is conceptual (different library, validation strategy, data model) or fits cleanly in one bullet. Over-sketching defeats the skill's value: scannable options.
 
