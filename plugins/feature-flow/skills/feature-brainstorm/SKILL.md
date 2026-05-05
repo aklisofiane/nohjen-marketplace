@@ -41,11 +41,19 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 
    Use Grep, Glob, Read, and the Explore agent freely. Time spent here is the difference between generic advice and real recommendations. If the project has a `docs/` folder or `CLAUDE.md`, consult it — those usually point at the right files.
 
-5. **Identify whether there's a real tradeoff.** Ask yourself: are there genuinely 2-3 reasonable approaches a thoughtful engineer might disagree about? Or is one path clearly right given the codebase? Don't manufacture options for the sake of presenting choices — that's noise. See "When there's no real tradeoff" below.
+5. **Look outward — stack & libraries.** Before locking the option set, check whether a library owns this problem domain in the project's stack. This is the step that prevents handing the user a from-scratch design when a mature library would have done it.
 
-6. **Present the options.** Use the structure below. Be concise — bullets, not paragraphs. Each option's pros/cons should reference the *specific* codebase context you found, not generic software wisdom.
+   - **Detect the stack.** Read the manifest(s) at the repo root: `package.json` (Node/TS), `pyproject.toml` / `requirements.txt` (Python), `pom.xml` / `build.gradle(.kts)` (Java/Kotlin), `go.mod` (Go), `Cargo.toml` (Rust), `Gemfile` (Ruby), `composer.json` (PHP), `*.csproj` (.NET), `pubspec.yaml` (Dart). Also note the framework in play (Next.js, NestJS, Spring, Rails, Django, Laravel, …) — framework picks the idiomatic library set.
+   - **Check what's already installed first.** If something in the dependency list already covers the domain, that's almost always the right Option A — leverage it instead of adding a parallel solution.
+   - **Domains commonly owned by libraries.** Auth, payments, search, queues/jobs, ORM, validation, file uploads, email, observability, feature flags, i18n, rate limiting, RBAC. If the request lands in one of these, treat "use a library" as a first-class option, not a footnote.
+   - **Use the web when local context isn't enough.** When you don't know the current idiomatic library for the detected stack+domain, run a `WebSearch` (e.g., *"NestJS auth library 2026"*, *"Spring Boot job queue"*, *"Go HTTP validation library"*). Then `WebFetch` the top one or two results to confirm the library is maintained and fits the stack — don't recommend from training data alone for something that may have shifted. Prefer `mcp__plugin_context7_context7__resolve-library-id` + `query-docs` when available — it's faster than scraping docs pages.
+   - **Frame the option fairly.** "Use <library>" should appear with concrete pros/cons grounded in *this* stack — what it gives you, what it locks you into, what its escape hatch looks like — alongside roll-your-own. Library-vs-roll-your-own is a real tradeoff. Library-vs-library is only a real tradeoff when they impose different architectures (different table shapes, different request lifecycle, different mental model).
 
-7. **Recommend, then stop.** Give your pick and one sentence on why. Then ask the user to choose — via `AskUserQuestion` when available (with options' ASCII sketches in the `preview` field), otherwise in chat. The full prose pros/cons stays in chat above either way (picker labels are too short for it). Do not start implementing.
+6. **Identify whether there's a real tradeoff.** Ask yourself: are there genuinely 2-3 reasonable approaches a thoughtful engineer might disagree about? Or is one path clearly right given the codebase? Don't manufacture options for the sake of presenting choices — that's noise. See "When there's no real tradeoff" below.
+
+7. **Present the options.** Use the structure below. Be concise — bullets, not paragraphs. Each option's pros/cons should reference the *specific* codebase context you found, not generic software wisdom.
+
+8. **Recommend, then stop.** Give your pick and one sentence on why. Then ask the user to choose — via `AskUserQuestion` when available (with options' ASCII sketches in the `preview` field), otherwise in chat. The full prose pros/cons stays in chat above either way (picker labels are too short for it). Do not start implementing.
 
 ## Output format
 
@@ -86,6 +94,8 @@ For patterns and worked examples, read `references/ascii-sketches.md` the first 
 ## Decomposing a big feature
 
 When the scope check (step 3) says a request is too big for a single options output — multiple independent decisions in different dimensions — the right move is *not* to surface a 2-3 option set that papers over the complexity. Instead, decompose the umbrella into sub-features that each warrant their own brainstorm → spec → implement → document cycle.
+
+**Ask the library question first.** Before decomposing, run step 5 (Look outward) on the umbrella as a whole. A library choice can collapse the decomposition — picking Better Auth for an "auth" umbrella subsumes provider, session strategy, membership, and role sub-features into "configure + customize." If the user picks a library, the decomposition shrinks to just the parts the library doesn't own (e.g., custom UI flows, app-specific authorization rules). If they pick roll-your-own, decompose normally.
 
 **Output for a decomposed feature:**
 
@@ -136,7 +146,7 @@ This is honest and saves the user time. Manufactured options are worse than one 
 
 ## What good options look like
 
-- **Distinct in shape, not just in detail.** "Use library X" vs "use library Y" is usually not a real tradeoff unless the libraries impose different architectures. "Server-side validation in middleware" vs "validation co-located with the route handler" is a real tradeoff.
+- **Distinct in shape, not just in detail.** "Server-side validation in middleware" vs "validation co-located with the route handler" is a real tradeoff. **Library-vs-roll-your-own is also a real tradeoff** — different ownership, different upgrade path, different escape hatch — and should appear as a first-class option whenever the domain is one libraries commonly own (see step 5). **Library-vs-library** is only a real tradeoff when the libraries impose different architectures (different table shapes, different request lifecycle, different mental model); otherwise it's a detail, not an option.
 - **Tied to the actual codebase.** A pro like "easier to test" is generic; "easier to test because it slots into the existing `StubProvider` pattern in `apps/worker/`" is real.
 - **Honest about cons.** Every option has costs. If you can't name a real con, you haven't thought hard enough or the option isn't really different from another one.
 
