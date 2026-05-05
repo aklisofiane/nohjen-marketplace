@@ -1,6 +1,6 @@
 {
   "name": "feature-flow",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "An end-to-end feature workflow as a single plugin: brainstorm options, write a medium-weight spec, then document the change after implementation. Three sibling skills (feature-brainstorm, feature-spec, doc-generator) that share conventions and reference assets — install once, get the whole flow.",
   "author": {
     "name": "Sofiane Akli",

@@ -25,7 +25,9 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 
 ## The flow
 
-1. **Resume check.** Before anything else, glob `.specs/*/SPEC_PLAN.md`. If any exist with unchecked items (`- [ ]`), and the user's request mentions a name that overlaps with one of those umbrellas (e.g., user says "auth" and `.specs/auth/` exists), surface it: *"I see `auth/` has 2 of 4 sub-features still open ([list them]). Continuing that, or starting something new?"* If there's no overlap, stay silent — don't list every umbrella on every cold start. See "Decomposing a big feature" for the umbrella mechanic.
+> When asking the user to pick between options at any step below, prefer `AskUserQuestion` if available. For the option-pick step, pass each option's ASCII sketch (if any) in the `preview` field — the user gets a side-by-side picker.
+
+1. **Resume check.** Before anything else, glob `.specs/*/SPEC_PLAN.md`. If any exist with unchecked items (`- [ ]`), and the user's request mentions a name that overlaps with one of those umbrellas (e.g., user says "auth" and `.specs/auth/` exists), ask whether they're continuing or starting something new. If there's no overlap, stay silent — don't list every umbrella on every cold start. See "Decomposing a big feature" for the umbrella mechanic.
 
 2. **Understand the ask.** Re-read the user's request. What's the goal behind the goal? If it's genuinely ambiguous (e.g., "add notifications" — to what? for whom? when?), ask one or two crisp clarifying questions before exploring. Don't ask questions whose answers you can find in the code.
 
@@ -43,7 +45,7 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 
 6. **Present the options.** Use the structure below. Be concise — bullets, not paragraphs. Each option's pros/cons should reference the *specific* codebase context you found, not generic software wisdom.
 
-7. **Recommend, then stop.** Give your pick and one sentence on why. Then wait for the user to choose. Do not start implementing.
+7. **Recommend, then stop.** Give your pick and one sentence on why. Then ask the user to choose — via `AskUserQuestion` when available (with options' ASCII sketches in the `preview` field), otherwise in chat. The full prose pros/cons stays in chat above either way (picker labels are too short for it). Do not start implementing.
 
 ## Output format
 

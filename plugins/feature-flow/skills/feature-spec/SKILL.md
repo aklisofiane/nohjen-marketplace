@@ -30,7 +30,7 @@ Trigger when the direction is decided and the user wants to formalize before imp
 
 3. **Draft the full spec.** Use the structure below. Where something is genuinely unclear, mark it inline as `[?: question]` rather than guessing. These markers become the clarifying questions in step 4. Show the entire draft to the user before asking anything.
 
-4. **Resolve clarifications in one batch.** If the draft has `[?]` markers, present the spec, then list the markers in a single numbered list:
+4. **Resolve clarifications in one batch.** If the draft has `[?]` markers, present the spec, then ask all the markers in a single batch — discrete-choice ones via `AskUserQuestion` (when available), open-ended ones in chat. When asking in chat, use a numbered list:
    > "Before we finalize, here are the things I'm not sure about:
    > 1. [first question]
    > 2. [second question]
@@ -38,14 +38,7 @@ Trigger when the direction is decided and the user wants to formalize before imp
    
    Wait for answers, revise the spec once, and re-display. Only if the revision *still* leaves real ambiguity should you fall back to one-question-at-a-time — and at that point the questions should be deep, not surface-level.
 
-5. **Hand off.** Once the spec is clean, present both paths and let the user pick:
-   > "Spec looks ready. Two ways to take this forward:
-   > - **Implement now** — go straight into the work (good for small, contained features)
-   > - **Save to `.specs/`** — write the spec to a working file so we can phase the implementation later (good for bigger features, or when picking up across sessions)
-   > 
-   > Which one?"
-   
-   Both options are presented every time. Don't judge size for the user — they'll decide in a second.
+5. **Hand off.** Once the spec is clean, ask the user how to proceed: *Implement now* (good for small, contained features) or *Save to `.specs/`* (good for bigger features or picking up across sessions). Both options every time; don't judge size for the user. When asking in chat, frame it as a clear two-option pick — e.g., *"Spec looks ready. Implement now, or save to `.specs/` to phase the work later?"*
 
    If during step 4 the spec is clearly turning into a tree of unmade decisions (multiple `[?]` markers about *which approach* rather than *which detail*), pause and recommend going back to `feature-brainstorm` to decompose first. A medium-weight spec captures one chosen direction; it's not the right artifact for "we haven't decided the architecture yet."
 
