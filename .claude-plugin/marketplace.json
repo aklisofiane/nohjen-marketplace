@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Nohjen's marketplace of Claude Code plugins: skills, agents, commands, and hooks.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
@@ -14,6 +14,12 @@
       "source": "./plugins/doc-generator",
       "description": "Generate or update project documentation from the latest git commit or a list of files. Produces concise, high-signal markdown that slots into an existing docs/ folder.",
       "category": "documentation"
+    },
+    {
+      "name": "feature-brainstorm",
+      "source": "./plugins/feature-brainstorm",
+      "description": "Surfaces 2-3 viable options with project-grounded pros/cons and a recommendation when the user proposes a feature or change with a real tradeoff. Stops before implementation.",
+      "category": "workflow"
     }
   ]
 }

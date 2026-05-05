@@ -1,0 +1,9 @@
+{
+  "name": "feature-brainstorm",
+  "version": "0.1.0",
+  "description": "Surfaces 2-3 viable options with project-grounded pros/cons and a recommendation when the user proposes a feature or change with a real tradeoff. Stops before implementation.",
+  "author": {
+    "name": "Sofiane Akli",
+    "email": "aklisof@gmail.com"
+  }
+}
