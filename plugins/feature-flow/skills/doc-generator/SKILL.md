@@ -102,6 +102,17 @@ If there's no `INDEX.md` yet, create one the first time you add a doc. Base the 
 
 At the end, give the user a short summary: which docs were created, which were updated, which existing docs you *didn't* touch but flagged as possibly affected (so they can double-check). One short paragraph or a bulleted list.
 
+### 8. Close the spec loop
+
+`.specs/` (at the repo root) holds working specs that this skill's siblings — `feature-brainstorm` and `feature-spec` — write while a feature is in flight. A spec is only truly "complete" when the change has shipped *and* been documented. This skill is the place where that loop closes.
+
+After step 7, do a quick check:
+
+- **Glob `.specs/*/SPEC_PLAN.md`.** For each one, read the unchecked items (`- [ ]`). If any unchecked item plausibly matches what was just documented (the sub-feature name appears in the changed files, the doc updates, or the commit message), ask the user: *"This update looks like it covers the `<sub-feature>` sub-feature of `<umbrella>/`. Mark it complete?"* If yes, flip the checkbox in the plan from `- [ ]` to `- [x]` and append a one-line note (e.g., `— shipped in commit abc1234`).
+- **Also check standalone specs** (`.specs/*.md` outside subdirectories). If a feature name matches what was just documented, ask: *"`.specs/<feature>.md` looks like it was just shipped + documented. Delete the spec file now (it's served its purpose), keep it, or leave it for you to handle?"* Default to keeping it — never delete without explicit user confirmation.
+
+If `.specs/` doesn't exist, skip this step silently. Don't surface this prompt when there's no plausible match — it's noise. The whole point is to make the workflow loop self-completing without nagging.
+
 ## Handling ambiguity
 
 - **No `docs/` folder exists yet** → create it, seed with `INDEX.md` and whichever doc types fit the changes in scope. Don't over-scaffold — only create the docs the current changes need.

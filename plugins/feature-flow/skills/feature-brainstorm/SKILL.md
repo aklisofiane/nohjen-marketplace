@@ -25,9 +25,13 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 
 ## The flow
 
-1. **Understand the ask.** Re-read the user's request. What's the goal behind the goal? If it's genuinely ambiguous (e.g., "add notifications" — to what? for whom? when?), ask one or two crisp clarifying questions before exploring. Don't ask questions whose answers you can find in the code.
+1. **Resume check.** Before anything else, glob `.specs/*/SPEC_PLAN.md`. If any exist with unchecked items (`- [ ]`), and the user's request mentions a name that overlaps with one of those umbrellas (e.g., user says "auth" and `.specs/auth/` exists), surface it: *"I see `auth/` has 2 of 4 sub-features still open ([list them]). Continuing that, or starting something new?"* If there's no overlap, stay silent — don't list every umbrella on every cold start. See "Decomposing a big feature" for the umbrella mechanic.
 
-2. **Explore the codebase for context.** This is the part that makes the recommendation worth anything. Before laying out options, spend the time to understand:
+2. **Understand the ask.** Re-read the user's request. What's the goal behind the goal? If it's genuinely ambiguous (e.g., "add notifications" — to what? for whom? when?), ask one or two crisp clarifying questions before exploring. Don't ask questions whose answers you can find in the code.
+
+3. **Scope check.** Before exploring, ask yourself: does this request describe **multiple independent decisions** that aren't really comparable as 2-3 options? "Add authentication" usually means picking a provider *and* a session strategy *and* a frontend integration *and* an authorization model — that's a tree of decisions, not one. If yes, skip the options output and decompose instead (see "Decomposing a big feature" below). If no, continue.
+
+4. **Explore the codebase for context.** This is the part that makes the recommendation worth anything. Before laying out options, spend the time to understand:
    - Where similar features live and how they're structured
    - The conventions and abstractions already in play (don't propose options that fight the codebase)
    - Constraints that narrow the option space (the architecture, type system, existing data model, deployment shape)
@@ -35,11 +39,11 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 
    Use Grep, Glob, Read, and the Explore agent freely. Time spent here is the difference between generic advice and real recommendations. If the project has a `docs/` folder or `CLAUDE.md`, consult it — those usually point at the right files.
 
-3. **Identify whether there's a real tradeoff.** Ask yourself: are there genuinely 2-3 reasonable approaches a thoughtful engineer might disagree about? Or is one path clearly right given the codebase? Don't manufacture options for the sake of presenting choices — that's noise. See "When there's no real tradeoff" below.
+5. **Identify whether there's a real tradeoff.** Ask yourself: are there genuinely 2-3 reasonable approaches a thoughtful engineer might disagree about? Or is one path clearly right given the codebase? Don't manufacture options for the sake of presenting choices — that's noise. See "When there's no real tradeoff" below.
 
-4. **Present the options.** Use the structure below. Be concise — bullets, not paragraphs. Each option's pros/cons should reference the *specific* codebase context you found, not generic software wisdom.
+6. **Present the options.** Use the structure below. Be concise — bullets, not paragraphs. Each option's pros/cons should reference the *specific* codebase context you found, not generic software wisdom.
 
-5. **Recommend, then stop.** Give your pick and one sentence on why. Then wait for the user to choose. Do not start implementing.
+7. **Recommend, then stop.** Give your pick and one sentence on why. Then wait for the user to choose. Do not start implementing.
 
 ## Output format
 
@@ -76,6 +80,41 @@ Give the sketch room to breathe — pad inside boxes, add a blank line above and
 Skip sketches when the difference is conceptual (different library, validation strategy, data model) or fits cleanly in one bullet. Over-sketching defeats the skill's value: scannable options.
 
 For patterns and worked examples, read `references/ascii-sketches.md` the first time a UI/layout option comes up in a session.
+
+## Decomposing a big feature
+
+When the scope check (step 3) says a request is too big for a single options output — multiple independent decisions in different dimensions — the right move is *not* to surface a 2-3 option set that papers over the complexity. Instead, decompose the umbrella into sub-features that each warrant their own brainstorm → spec → implement → document cycle.
+
+**Output for a decomposed feature:**
+
+Write a parent file at `.specs/<feature>/SPEC_PLAN.md` with this shape:
+
+```markdown
+# <Feature name>
+
+Umbrella: <one or two lines on what the whole feature is and why>
+
+## Decomposition
+
+- [ ] <sub-feature-1> — <one-line note on what this piece is>
+- [ ] <sub-feature-2> — <one-line note>
+- [ ] <sub-feature-3> — <one-line note>
+- [ ] <sub-feature-4> — <one-line note>
+
+## Cross-cutting notes
+
+<anything that spans sub-features and doesn't belong in just one — e.g., "all sub-features must respect the existing CSRF token middleware">
+```
+
+Sub-features are decisions that can be made independently. For "add authentication," that's typically *provider choice*, *session strategy*, *UI flows*, *authorization model*. Aim for 3-6 sub-features; if you're listing more than 8, the umbrella is itself decomposable into smaller umbrellas.
+
+After writing the plan, ask the user which sub-feature to brainstorm first. Then run the normal options flow on **that sub-feature only** — not the whole umbrella. Each sub-feature's spec eventually lands at `.specs/<feature>/<sub-feature>.md`.
+
+**A checkbox flips to `[x]` only when `doc-generator` confirms documentation has captured that sub-feature** — see the doc-generator skill for the loop-close mechanic. This skill writes the plan and the unchecked items; it doesn't flip them.
+
+**Don't decompose** when:
+- The "decisions" collapse into one obvious choice given the codebase (e.g., "add auth" in a project that already uses Clerk → no provider choice needed; the umbrella is smaller than it looked)
+- The user explicitly says "I want one spec for the whole thing" — respect that; produce a single spec via `feature-spec` and let them eat the complexity
 
 ## When there's no real tradeoff
 

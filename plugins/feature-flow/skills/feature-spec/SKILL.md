@@ -1,6 +1,6 @@
 ---
 name: feature-spec
-description: Use this skill once a feature direction has been chosen and the user wants to formalize it before implementation — typically after `feature-brainstorm` selects an option, or when the user says things like "let's write the spec for this", "turn this into a spec", "spec this out", "write the design doc for X", or "I want to write this down before coding". Produces a medium-weight spec — heavier than a chat plan, lighter than a full design doc — that captures architecture, design principles, and explicit changes to API / data-model / UI without dropping into code. Asks clarifying questions in batch until the spec is unambiguous, then offers two paths: implement directly (small features) or save to `docs/specs/` for phased implementation later (big features). Trigger this skill whenever the user has decided on a direction but hasn't started coding yet — even if they don't explicitly say "spec".
+description: Use this skill once a feature direction has been chosen and the user wants to formalize it before implementation — typically after `feature-brainstorm` selects an option, or when the user says things like "let's write the spec for this", "turn this into a spec", "spec this out", "write the design doc for X", or "I want to write this down before coding". Produces a medium-weight spec — heavier than a chat plan, lighter than a full design doc — that captures architecture, design principles, and explicit changes to API / data-model / UI without dropping into code. Asks clarifying questions in batch until the spec is unambiguous, then offers two paths: implement directly or save to `.specs/` as a working artifact. Trigger this skill whenever the user has decided on a direction but hasn't started coding yet — even if they don't explicitly say "spec".
 ---
 
 # Feature Spec
@@ -41,11 +41,13 @@ Trigger when the direction is decided and the user wants to formalize before imp
 5. **Hand off.** Once the spec is clean, present both paths and let the user pick:
    > "Spec looks ready. Two ways to take this forward:
    > - **Implement now** — go straight into the work (good for small, contained features)
-   > - **Save to `docs/specs/`** — write the spec to a file so we can phase the implementation later (good for bigger features)
+   > - **Save to `.specs/`** — write the spec to a working file so we can phase the implementation later (good for bigger features, or when picking up across sessions)
    > 
    > Which one?"
    
    Both options are presented every time. Don't judge size for the user — they'll decide in a second.
+
+   If during step 4 the spec is clearly turning into a tree of unmade decisions (multiple `[?]` markers about *which approach* rather than *which detail*), pause and recommend going back to `feature-brainstorm` to decompose first. A medium-weight spec captures one chosen direction; it's not the right artifact for "we haven't decided the architecture yet."
 
 ## Spec structure
 
@@ -98,14 +100,19 @@ The rule of thumb: if the section would have one paragraph or fewer, fold it int
 - Asking clarifying questions one at a time when you can batch them. The user reasons better when they see the whole draft and a numbered list at once.
 - Writing the spec to a file before the user has reviewed and approved the content. Show first, save after — saving is the *terminal* action of step 5, not a side-effect of drafting.
 
-## Saving to `docs/specs/`
+## Saving to `.specs/`
 
-When the user picks the "save to docs/specs" path:
-- Default file path: `docs/specs/<short-kebab-topic>.md`
-- If the project already has a `docs/specs/` (or similar) convention with dated filenames or a different structure, **follow the project's convention** — check what's there first
-- Filename is the feature name in kebab-case (e.g., `workflow-row-actions.md`), no date prefix unless the project already uses dated specs
-- Create the directory if it doesn't exist
-- After writing, briefly confirm the path and let the user know the spec is saved — don't continue into implementation unless they explicitly ask
+`.specs/` at the repo root is the working directory for in-flight feature specs. It is **not** the same as `docs/`: `docs/` is the durable design record (written by `doc-generator` from real shipped code); `.specs/` is scaffolding that lives only as long as the work is in flight. Once a spec has been implemented and documented, the user can delete its file — the documentation captures what shipped.
+
+**Where to write the file:**
+
+- **Standalone feature** (no umbrella): write to `.specs/<feature>.md` (e.g., `.specs/workflow-row-actions.md`).
+- **Sub-feature of an umbrella** (a `feature-brainstorm` decomposition created `.specs/<umbrella>/SPEC_PLAN.md` earlier in the session, or the user is continuing one and the plan exists on disk): write to `.specs/<umbrella>/<sub-feature>.md` (e.g., `.specs/auth/provider-choice.md`). Do **not** modify the parent `SPEC_PLAN.md` — checkboxes there flip later via `doc-generator`, not now. The fact that the sub-spec file exists is enough signal that the sub-feature is "in progress."
+- Filename is kebab-case feature name. No date prefix.
+- Create `.specs/` (and the umbrella subfolder if relevant) if it doesn't exist.
+- After writing, briefly confirm the path. Don't continue into implementation unless the user explicitly asks.
+
+**Why `.specs/` and not `docs/specs/`:** specs are *working artifacts* — temporary scaffolding for a feature in progress. The durable design record of "what the system is" lives in `docs/` and is written by `doc-generator` once the change ships. Keeping specs out of `docs/` preserves the meaning of `docs/` and makes it obvious to a reader that anything in `.specs/` is in flight, not canonical.
 
 ## Why this exists
 
