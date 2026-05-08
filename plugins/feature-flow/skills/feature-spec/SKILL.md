@@ -40,7 +40,17 @@ Trigger when the direction is decided and the user wants to formalize before imp
    
    Wait for answers, revise the spec once, and re-display. Only if the revision *still* leaves real ambiguity should you fall back to one-question-at-a-time — and at that point the questions should be deep, not surface-level.
 
-5. **Hand off.** Once the spec is clean, ask the user how to proceed: *Implement now* (good for small, contained features) or *Save to `.specs/`* (good for bigger features or picking up across sessions). Both options every time; don't judge size for the user. When asking in chat, frame it as a clear two-option pick — e.g., *"Spec looks ready. Implement now, or save to `.specs/` to phase the work later?"*
+5. **Self-assess implementation confidence.** Before the hand-off, do an honest internal check: how likely is it that the implementation lands correctly in one pass without surprises? Weigh:
+   - Are *Open questions* genuinely empty, or is the spec papering over unknowns?
+   - How many subsystems does the change touch? More surface area = more places to be surprised.
+   - Is the relevant code well-explored in this conversation, or would you be guessing?
+   - Are there integration points (external APIs, async flows, migrations) where edge cases bite?
+
+   Translate that into a recommendation that leads the hand-off:
+   - **≥90% confident** → recommend one-shotting the implementation.
+   - **Anything less** → recommend splitting the work into a few discrete phases (e.g., "1. data model + migration, 2. API endpoint, 3. UI wiring"), each verifiable before the next. Name the phases in one or two lines so the user can react, and **fold them into the spec as a *Phases* section** before the hand-off — they're more durable there than in chat, and if the user saves to `.specs/`, future-you (or another agent) can pick up phase-by-phase. If confidence is genuinely low (≪70%), say so plainly — phasing won't save a wobbly spec; refine the spec further or kick back to `feature-brainstorm`.
+
+6. **Hand off.** Ask the user how to proceed: *Implement now* or *Save to `.specs/`* (for picking up across sessions). Lead with the recommendation from step 5 so the user can take it or leave it, but always offer both options. When asking in chat, frame it as a clear two-option pick — e.g., *"I'm ~95% sure this lands in one pass. Implement now, or save to `.specs/`?"* For lower confidence: *"This touches three subsystems with a migration — I'd phase it: 1) data model, 2) API, 3) UI. Save to `.specs/` and tackle phase 1, or push through in one go?"*
 
    If during step 4 the spec is clearly turning into a tree of unmade decisions (multiple `[?]` markers about *which approach* rather than *which detail*), pause and recommend going back to `feature-brainstorm` to decompose first. A medium-weight spec captures one chosen direction; it's not the right artifact for "we haven't decided the architecture yet."
 
@@ -74,6 +84,7 @@ Add these only when the feature genuinely needs them. **A section earns its plac
 - **Data model** — full call-out section if introducing new entities, relationships, or non-trivial migrations
 - **API surface** — when adding/modifying public endpoints or contracts that consumers depend on
 - **UI states** — when interaction states/edge cases matter (loading, empty, error, optimistic updates, focus/keyboard behavior)
+- **Phases** — when step 5 lands on a phased implementation. One or two lines per phase: what's in scope, what gets shipped/verified at the end of it. Distinct from *Migration / rollout* (which is about production rollout, not work breakdown).
 - **Migration / rollout** — when the change has phasing, feature flags, backfills, or breaking-change concerns
 - **Dependencies** — only when introducing or changing external services, libraries, or new infrastructure
 
