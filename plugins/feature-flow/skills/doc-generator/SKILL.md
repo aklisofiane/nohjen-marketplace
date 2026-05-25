@@ -76,6 +76,7 @@ Content principles (these are the whole point — take them seriously):
 
 - **Lead with purpose.** First sentence answers "what is this and why does it exist?" — not "this file contains...".
 - **Describe shape, not lines.** Name the exports, the public API, the key data flows. Don't paraphrase every function.
+- **Stay high-level to avoid drift.** Docs should help a reader understand *what something is about* and *how it fits together* — not mirror the code. Avoid referencing specific function names, variable names, or implementation details that change with every refactor. If renaming a function would break the doc, the doc is too specific. Write at the level of concepts, responsibilities, and flows — the code is the source of truth for specifics.
 - **Call out non-obvious constraints.** Ordering requirements, side effects, who owns what, what must not be called from where. This is where docs earn their keep.
 - **Prefer tables for enumerable things** (endpoints, exports, env vars, types).
 - **ASCII diagrams for flows** when they help. One small diagram beats three paragraphs.
