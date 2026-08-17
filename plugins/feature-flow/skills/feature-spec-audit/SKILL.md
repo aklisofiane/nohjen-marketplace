@@ -1,13 +1,13 @@
 ---
 name: feature-spec-audit
-description: Use this skill when the user wants to check coherence across an umbrella spec — multiple sub-specs under `.specs/<umbrella>/` that were written one at a time and may now contradict each other or have gaps. Trigger on "audit my umbrella spec", "check coherence", "do my specs contradict each other", "review .specs/<name> for drift", "is anything missing in my umbrella", or before implementing across an umbrella ("I'm ready to start implementing the auth umbrella" — recommend an audit first). Read-only: reports findings with file paths and quoted excerpts; does not edit files. Skip for standalone (non-umbrella) specs and for code/docs drift checks.
+description: Use this skill when the user wants to check coherence across an umbrella spec — multiple sub-specs under `.specs/<umbrella>/` that were written one at a time and may now contradict each other or have gaps. Trigger on "audit my umbrella spec", "check coherence", "do my specs contradict each other", "review .specs/<name> for drift", "is anything missing in my umbrella", or before implementing across an umbrella ("I'm ready to start implementing the auth umbrella" — recommend an audit first). Read-only: reports findings with file paths and quoted excerpts; does not edit spec files (can save the report to `_audit.md` on request). Skip for standalone (non-umbrella) specs and for code/docs drift checks.
 ---
 
 # Feature Spec Audit
 
 You are auditing an umbrella spec tree — `SPEC_PLAN.md` plus several sub-spec files at `.specs/<umbrella>/` — for coherence between the parts. Sub-specs are written one at a time and often across sessions, so two of them can disagree on the data model, on what's in or out of scope, on naming, or on assumptions about each other. This skill reads them all together and reports the inconsistencies.
 
-The skill is **read-only**. It produces a chat report. It does not edit files. After the report, the user can ask the model to fix the issues — that's a normal follow-up, not part of the audit.
+The skill is **read-only**. It produces a chat report. It does not edit spec files; the only write it may perform is saving the report itself to `.specs/<umbrella>/_audit.md`, and only when the user asks. After the report, the user can ask the model to fix the issues — that's a normal follow-up, not part of the audit.
 
 ## When to use this skill
 
@@ -35,7 +35,7 @@ Trigger when the user asks to audit, sanity-check, or coherence-check an umbrell
 
 4. **Render the report in chat.** Use the format under *Output format*. Number findings globally so the user can reference them ("fix 1 and 3"). Cite file path, section heading, and quoted excerpts for every finding. Tag confidence when a finding depends on assumptions.
 
-5. **Stop.** End with one line: *"Want me to fix any of these?"* Do not propose specific fixes, do not auto-edit anything. If the user says yes, fix as a normal follow-up.
+5. **Stop.** End with one line: *"Want me to fix any of these, or save this report to `.specs/<umbrella>/_audit.md` for later?"* Do not propose specific fixes, do not auto-edit spec files. Saving the report is the one write the skill may perform, and only on request — the `_` prefix keeps it out of future audits and out of `feature-implement`'s reads, so the findings survive across sessions without polluting the spec tree. If the user says yes to fixing, fix as a normal follow-up.
 
 ## What it checks
 
@@ -92,11 +92,13 @@ Render a chat report grouped by pass, with **global numbering across all finding
 
 ## Open questions still pending (<count>)
 
-<N>. **<file> § Open questions** has <K> unchecked items — these block implementation per the spec.
+<N>. **<file> § Open questions** has <K> unresolved items — these block implementation per the spec.
 
 ---
-<total> findings across <N> sub-specs. Want me to fix any of these?
+<total> findings across <N> sub-specs. <If findings differ in impact: "Findings <a, b> block implementation; <c, d> are cosmetic."> Want me to fix any of these, or save this report to `_audit.md`?
 ```
+
+**Severity is not confidence.** Confidence says how sure you are the finding is real; severity says whether it blocks implementation. A high-confidence naming mismatch (`users.email` vs `users.email_address`) is cosmetic — easy to fix, unlikely to derail anything. A data-shape contradiction (JWT sessions vs server-side rows) is blocking — implementing either side bakes in a decision the specs never made. When findings differ in impact, say which are blocking in the closing line so the user can prioritize; that's triage, not a proposed fix.
 
 If a section has zero findings, **omit it entirely** — don't print empty headers. If all four sections have zero findings, output one line and stop:
 
@@ -109,13 +111,14 @@ Don't pad an empty audit with reassurance or summary tables.
 ## What good output looks like
 
 - **Specific.** Every finding cites file, section, and a quoted excerpt. "There's a contradiction in your auth specs" is not a finding.
+- **Tight excerpts.** Quote the shortest span that shows the conflict — one or two lines per side. Half-paragraph quotes bury the actual disagreement and make the report unscannable.
 - **Numbered globally.** The user should be able to say "fix 1, 3, and 5" without ambiguity.
 - **Honest about ambiguity.** If two excerpts *might* contradict but the resolution depends on context the specs don't fix, flag it as a *possible* contradiction with `confidence: medium` rather than asserting it.
 - **Quiet on a clean tree.** Zero findings is a single line, not a victory lap.
 
 ## What to avoid
 
-- **Editing files.** This skill is read-only. The user fixes after the report; if they ask the model to fix, that's a normal follow-up, not part of the skill.
+- **Editing spec files.** This skill doesn't touch the specs. The user fixes after the report; if they ask the model to fix, that's a normal follow-up, not part of the skill. (Saving the report to `_audit.md` on request is the one allowed write — it adds a file, never modifies one.)
 - **Proposing specific fixes.** "I think `provider-choice.md` is right and `data-model.md` is wrong" is a judgment call the skill shouldn't make. Surface the contradiction; let the user decide which side wins.
 - **Grading prose or completeness.** This isn't a quality reviewer for individual specs — it's a cross-spec coherence checker. Bad prose in one spec is not a finding; bad prose that contradicts another spec is.
 - **Drift checks against code or `docs/`.** Out of scope. `doc-generator` covers spec-vs-shipped; the audit covers spec-vs-spec.

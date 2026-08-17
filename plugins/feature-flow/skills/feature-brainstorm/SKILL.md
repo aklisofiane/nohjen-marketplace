@@ -31,7 +31,7 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 
 2. **Understand the ask.** Re-read the user's request. What's the goal behind the goal? If it's genuinely ambiguous (e.g., "add notifications" — to what? for whom? when?), ask one or two crisp clarifying questions before exploring. Don't ask questions whose answers you can find in the code.
 
-3. **Scope check.** Before exploring, ask yourself: does this request describe **multiple independent decisions** that aren't really comparable as 2-3 options? "Add authentication" usually means picking a provider *and* a session strategy *and* a frontend integration *and* an authorization model — that's a tree of decisions, not one. If yes, skip the options output and decompose instead (see "Decomposing a big feature" below). If no, continue.
+3. **Scope check (provisional).** Ask yourself: does this request *smell like* **multiple independent decisions** that aren't really comparable as 2-3 options? "Add authentication" usually means picking a provider *and* a session strategy *and* a frontend integration *and* an authorization model — that's a tree of decisions, not one. Flag it, but don't commit yet: whether it's really an umbrella depends on the codebase (e.g., "add auth" in a project that already uses Clerk collapses to one or two decisions). Confirm or dismiss the flag after step 4's exploration — if it holds, skip the options output and decompose instead (see "Decomposing a big feature" below).
 
 4. **Explore the codebase for context.** This is the part that makes the recommendation worth anything. Before laying out options, spend the time to understand:
    - Where similar features live and how they're structured
@@ -41,12 +41,14 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 
    Use Grep, Glob, Read, and the Explore agent freely. Time spent here is the difference between generic advice and real recommendations. If the project has a `docs/` folder or `CLAUDE.md`, consult it — those usually point at the right files.
 
+   Scale the exploration to the decision's blast radius. A contained UI or behavior tweak usually needs one or two targeted file reads; an architectural choice that touches data models, request lifecycles, or many call sites earns the Explore agent and a wider sweep. Over-exploring a small ask delays the answer without improving it.
+
 5. **Look outward — stack & libraries.** Before locking the option set, check whether a library owns this problem domain in the project's stack. This is the step that prevents handing the user a from-scratch design when a mature library would have done it.
 
    - **Detect the stack.** Read the manifest(s) at the repo root: `package.json` (Node/TS), `pyproject.toml` / `requirements.txt` (Python), `pom.xml` / `build.gradle(.kts)` (Java/Kotlin), `go.mod` (Go), `Cargo.toml` (Rust), `Gemfile` (Ruby), `composer.json` (PHP), `*.csproj` (.NET), `pubspec.yaml` (Dart). Also note the framework in play (Next.js, NestJS, Spring, Rails, Django, Laravel, …) — framework picks the idiomatic library set.
    - **Check what's already installed first.** If something in the dependency list already covers the domain, that's almost always the right Option A — leverage it instead of adding a parallel solution.
    - **Domains commonly owned by libraries.** Auth, payments, search, queues/jobs, ORM, validation, file uploads, email, observability, feature flags, i18n, rate limiting, RBAC. If the request lands in one of these, treat "use a library" as a first-class option, not a footnote.
-   - **Use the web when local context isn't enough.** When you don't know the current idiomatic library for the detected stack+domain, run a `WebSearch` (e.g., *"NestJS auth library 2026"*, *"Spring Boot job queue"*, *"Go HTTP validation library"*). Then `WebFetch` the top one or two results to confirm the library is maintained and fits the stack — don't recommend from training data alone for something that may have shifted. Prefer `mcp__plugin_context7_context7__resolve-library-id` + `query-docs` when available — it's faster than scraping docs pages.
+   - **Use the web when local context isn't enough.** When you don't know the current idiomatic library for the detected stack+domain, run a `WebSearch`, including the current year in the query (e.g., *"NestJS auth library <year>"*, *"Spring Boot job queue <year>"*). Then `WebFetch` the top one or two results to confirm the library is maintained and fits the stack — don't recommend from training data alone for something that may have shifted.
    - **Frame the option fairly.** "Use <library>" should appear with concrete pros/cons grounded in *this* stack — what it gives you, what it locks you into, what its escape hatch looks like — alongside roll-your-own. Library-vs-roll-your-own is a real tradeoff. Library-vs-library is only a real tradeoff when they impose different architectures (different table shapes, different request lifecycle, different mental model).
 
 6. **Identify whether there's a real tradeoff.** Ask yourself: are there genuinely 2-3 reasonable approaches a thoughtful engineer might disagree about? Or is one path clearly right given the codebase? Don't manufacture options for the sake of presenting choices — that's noise. See "When there's no real tradeoff" below.
@@ -54,6 +56,8 @@ If you're unsure whether the path is obvious, lean toward using the skill briefl
 7. **Present the options.** Use the structure below. Be concise — bullets, not paragraphs. Each option's pros/cons should reference the *specific* codebase context you found, not generic software wisdom.
 
 8. **Recommend, then stop.** Give your pick and one sentence on why. Then ask the user to choose — via `AskUserQuestion` when available (with options' ASCII sketches in the `preview` field), otherwise in chat. The full prose pros/cons stays in chat above either way (picker labels are too short for it). Do not start implementing.
+
+9. **After the pick, route the next step.** Once the user chooses, don't leave them at a dead end. For anything non-trivial, offer to formalize the decision via `feature-spec` — that's the designed next stage of the pipeline, and it works best while the brainstorm context is still in the conversation. For a change small enough that a spec would be ceremony (a few files, no open design questions left), offer to implement directly instead. Either way, name the next step and let the user confirm it.
 
 ## Output format
 
@@ -68,18 +72,22 @@ Use this exact structure when there's a real tradeoff:
 - How: <1-2 lines on the approach>
 - Pros: <bullets, project-specific>
 - Cons: <bullets, project-specific>
+- Effort: <small / medium / large> — <one clause on what drives it>
 
 **Option B: <name>**
 - How: <1-2 lines>
 - Pros: <bullets>
 - Cons: <bullets>
+- Effort: <small / medium / large> — <one clause>
 
 **(Option C if it's genuinely distinct)**
 
 **Recommendation:** <A/B/C> — <one sentence why, grounded in the project context above>
 ```
 
-Keep each option to ~5-8 lines total. If you're writing more, you're either over-explaining or the options aren't actually distinct.
+The effort line matters because cost is usually the first thing the user weighs against the pros/cons — a rough size (small = hours in a few files, medium = a day or two across a subsystem, large = multi-day or structural) is enough; don't estimate in hours.
+
+Keep each option to ~6-9 lines total. If you're writing more, you're either over-explaining or the options aren't actually distinct.
 
 ## Visual sketches (UI / layout / flow questions)
 
@@ -93,7 +101,7 @@ For patterns and worked examples, read `references/ascii-sketches.md` the first 
 
 ## Decomposing a big feature
 
-When the scope check (step 3) says a request is too big for a single options output — multiple independent decisions in different dimensions — the right move is *not* to surface a 2-3 option set that papers over the complexity. Instead, decompose the umbrella into sub-features that each warrant their own brainstorm → spec → implement → document cycle.
+When the scope check (step 3, confirmed against the codebase in step 4) says a request is too big for a single options output — multiple independent decisions in different dimensions — the right move is *not* to surface a 2-3 option set that papers over the complexity. Instead, decompose the umbrella into sub-features that each warrant their own brainstorm → spec → implement → document cycle.
 
 **Ask the library question first.** Before decomposing, run step 5 (Look outward) on the umbrella as a whole. A library choice can collapse the decomposition — picking Better Auth for an "auth" umbrella subsumes provider, session strategy, membership, and role sub-features into "configure + customize." If the user picks a library, the decomposition shrinks to just the parts the library doesn't own (e.g., custom UI flows, app-specific authorization rules). If they pick roll-your-own, decompose normally.
 

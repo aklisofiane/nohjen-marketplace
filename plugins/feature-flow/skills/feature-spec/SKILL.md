@@ -1,6 +1,6 @@
 ---
 name: feature-spec
-description: Use this skill once a feature direction has been chosen and the user wants to formalize it before implementation — typically after `feature-brainstorm` selects an option, or when the user says things like "let's write the spec for this", "turn this into a spec", "spec this out", "write the design doc for X", or "I want to write this down before coding". Produces a medium-weight spec — heavier than a chat plan, lighter than a full design doc — that captures architecture, design principles, and explicit changes to API / data-model / UI without dropping into code. Asks clarifying questions in batch until the spec is unambiguous, then offers two paths: implement directly or save to `.specs/` as a working artifact. Trigger this skill whenever the user has decided on a direction but hasn't started coding yet — even if they don't explicitly say "spec".
+description: Use this skill once a feature direction has been chosen and the user wants to formalize it before implementation — typically after `feature-brainstorm` selects an option, or when the user says things like "let's write the spec for this", "turn this into a spec", "spec this out", "write the design doc for X", or "I want to write this down before coding". Produces a medium-weight spec — heavier than a chat plan, lighter than a full design doc — that captures architecture, design principles, and explicit changes to API / data-model / UI without dropping into code. Asks clarifying questions in batch until the spec is unambiguous, then hands off: save to `.specs/` as a working artifact or implement right away (routing phased or multi-subsystem work through `feature-implement`). Also the place to *revise* an existing spec in `.specs/` when scope or details change before implementation. Trigger this skill whenever the user has decided on a direction but hasn't started coding yet — even if they don't explicitly say "spec".
 ---
 
 # Feature Spec
@@ -50,13 +50,15 @@ Trigger when the direction is decided and the user wants to formalize before imp
    - **≥90% confident** → recommend one-shotting the implementation.
    - **Anything less** → recommend splitting the work into a few discrete phases (e.g., "1. data model + migration, 2. API endpoint, 3. UI wiring"), each verifiable before the next. Name the phases in one or two lines so the user can react, and **fold them into the spec as a *Phases* section** before the hand-off — they're more durable there than in chat, and if the user saves to `.specs/`, future-you (or another agent) can pick up phase-by-phase. If confidence is genuinely low (≪70%), say so plainly — phasing won't save a wobbly spec; refine the spec further or kick back to `feature-brainstorm`.
 
-6. **Hand off.** Ask the user how to proceed: *Implement now* or *Save to `.specs/`* (for picking up across sessions). Lead with the recommendation from step 5 so the user can take it or leave it, but always offer both options. When asking in chat, frame it as a clear two-option pick — e.g., *"I'm ~95% sure this lands in one pass. Implement now, or save to `.specs/`?"* For lower confidence: *"This touches three subsystems with a migration — I'd phase it: 1) data model, 2) API, 3) UI. Save to `.specs/` and tackle phase 1, or push through in one go?"*
+6. **Hand off.** Ask the user how to proceed: *Implement now* or *Save to `.specs/`* (for picking up across sessions). Prefer `AskUserQuestion` for this pick (Header: `Next step`) — keep the labels short and put the confidence reasoning from step 5 in the chat text above the picker, leading with your recommendation so the user can take it or leave it. Always offer both options. When falling back to chat, frame it as a clear two-option pick — e.g., *"I'm ~95% sure this lands in one pass. Implement now, or save to `.specs/`?"* For lower confidence: *"This touches three subsystems with a migration — I'd phase it: 1) data model, 2) API, 3) UI. Save to `.specs/` and tackle phase 1, or push through in one go?"*
+
+   If the user picks *implement* and the spec is phased (or touches multiple subsystems), don't start coding inline — save the spec and invoke `feature-implement`. That skill owns the decision of *how* the implementation runs (this session, a team of agents, or a scripted workflow), and it reads the *Phases* section you just wrote. Implementing directly in this session is right only for the high-confidence, unphased case: a small spec you'd have recommended one-shotting anyway.
 
    If during step 4 the spec is clearly turning into a tree of unmade decisions (multiple `[?]` markers about *which approach* rather than *which detail*), pause and recommend going back to `feature-brainstorm` to decompose first. A medium-weight spec captures one chosen direction; it's not the right artifact for "we haven't decided the architecture yet."
 
 ## Spec structure
 
-Every spec has these five sections, in this order. They are the spine of the document.
+Every spec has these five sections, in this order. They are the spine of the document. For a calibration anchor on the target *weight* — how much detail "medium-weight" actually means — read `references/example-spec.md` the first time you draft a spec in a session.
 
 1. **Goal** — One or two lines: what the feature does + why it matters. The why is what makes this section earn its place.
 
@@ -104,7 +106,7 @@ The rule of thumb: if the section would have one paragraph or fewer, fold it int
 - Padding sections to feel complete. Empty or single-line sub-sections are worse than missing ones — they signal effort that isn't there.
 - Re-running the brainstorm. The option is chosen; the spec captures the *what* and the *why*, not the comparison of alternatives.
 - Asking clarifying questions one at a time when you can batch them. The user reasons better when they see the whole draft and a numbered list at once.
-- Writing the spec to a file before the user has reviewed and approved the content. Show first, save after — saving is the *terminal* action of step 5, not a side-effect of drafting.
+- Writing the spec to a file before the user has reviewed and approved the content. Show first, save after — saving is the *terminal* action of step 6, not a side-effect of drafting.
 
 ## Saving to `.specs/`
 
@@ -115,8 +117,18 @@ The rule of thumb: if the section would have one paragraph or fewer, fold it int
 - **Standalone feature** (no umbrella): write to `.specs/<feature>.md` (e.g., `.specs/workflow-row-actions.md`).
 - **Sub-feature of an umbrella** (a `feature-brainstorm` decomposition created `.specs/<umbrella>/SPEC_PLAN.md` earlier in the session, or the user is continuing one and the plan exists on disk): write to `.specs/<umbrella>/<sub-feature>.md` (e.g., `.specs/auth/provider-choice.md`). Do **not** modify the parent `SPEC_PLAN.md` — checkboxes there flip later via `doc-generator`, not now. The fact that the sub-spec file exists is enough signal that the sub-feature is "in progress."
 - Filename is kebab-case feature name. No date prefix.
+- Filenames starting with `_` are reserved for non-spec files (user notes, drafts, audit reports) — `feature-spec-audit` and `feature-implement` skip them. Never name a spec with a leading underscore, and mention the convention if the user wants scratch notes inside an umbrella.
 - Create `.specs/` (and the umbrella subfolder if relevant) if it doesn't exist.
-- After writing, briefly confirm the path. Don't continue into implementation unless the user explicitly asks.
+- After writing, briefly confirm the path. Don't continue into implementation unless the user explicitly asks — and when they do, hand off via `feature-implement` (per step 6) rather than improvising the execution inline.
+
+## Revising an existing spec
+
+Sometimes the entry point isn't a fresh direction but a saved spec that needs to change — the user asks directly ("update the auth spec — we're dropping magic links"), or `feature-implement` routes back here because the user wants to change the spec rather than build it. Don't restart the flow from scratch:
+
+- Read the existing file first. In an umbrella, re-read the siblings too — step 2's conflict-check applies to revisions just as much as to fresh drafts.
+- Edit surgically: touch the sections the change affects and leave the rest stable. The untouched sections were already reviewed and approved; rewriting the whole document throws that review away and invites new drift.
+- If the revision changes scope or approach (not just a detail), re-run step 5's confidence check — a spec that was one-shot-able before may need a *Phases* section now, and a phased spec that just shrank may not.
+- Show the revised sections (or the full spec, if short) before saving over the file. The show-first-save-after rule holds for revisions too.
 
 **Why `.specs/` and not `docs/specs/`:** specs are *working artifacts* — temporary scaffolding for a feature in progress. The durable design record of "what the system is" lives in `docs/` and is written by `doc-generator` once the change ships. Keeping specs out of `docs/` preserves the meaning of `docs/` and makes it obvious to a reader that anything in `.specs/` is in flight, not canonical.
 

@@ -6,13 +6,13 @@
   },
   "metadata": {
     "description": "Nohjen's marketplace of Claude Code plugins: skills, agents, commands, and hooks.",
-    "version": "0.4.6"
+    "version": "0.4.7"
   },
   "plugins": [
     {
       "name": "feature-flow",
       "source": "./plugins/feature-flow",
-      "description": "An end-to-end feature workflow as a single plugin: brainstorm options, write a medium-weight spec, audit umbrellas for coherence, implement the spec (solo or via a team of agents), then document what shipped. Five sibling skills (feature-brainstorm, feature-spec, feature-spec-audit, feature-implement, doc-generator) that share conventions and reference assets.",
+      "description": "An end-to-end feature workflow as a single plugin: brainstorm options, write a medium-weight spec, audit umbrellas for coherence, implement the spec (solo, via a team of agents, or as a scripted dynamic workflow), then document what shipped. Five sibling skills (feature-brainstorm, feature-spec, feature-spec-audit, feature-implement, doc-generator) that share conventions and reference assets.",
       "category": "workflow"
     }
   ]

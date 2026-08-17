@@ -22,9 +22,13 @@ Follow these steps in order. They're not rigid — use judgment — but most inv
 
 ### 1. Figure out the scope
 
-- No args / just "document the latest commit" → run `git show --name-only --pretty=format: HEAD` (or `git log -1 --name-only --pretty=format:`) to get the changed files. Also read the commit message for intent.
+- No args / just "document the latest commit" → run `git show --name-only --pretty=format: HEAD` (or `git log -1 --name-only --pretty=format:`) to get the changed files. Also read the commit message for intent. If HEAD is a merge commit this lists nothing — use `git diff HEAD^1 HEAD --name-only` instead.
+- "Refresh the docs" / "update the docs" with no specific commit in mind → the user usually means *everything since the docs were last touched*, not just HEAD. Find the last commit that touched `docs/` (`git log -1 --format=%H -- docs/`) and diff from there: `git diff <that>..HEAD --name-only`. Similarly, "the last N commits" → `git diff HEAD~N..HEAD --name-only`.
+- Working tree dirty → the user may mean their uncommitted work rather than HEAD (`git diff HEAD --name-only`). If it's ambiguous which they mean, ask.
 - Explicit paths → use those exactly. Resolve globs if any.
 - Exclude lockfiles, generated files, pure config churn, and anything that isn't meaningfully documentable unless the user asked for it.
+
+The diff tells you *where to look*; the current code tells you *what to write*. Read the in-scope files themselves, not just the diff — docs describe what the system **is**, not what changed (the commit message already covers that). Writing from the diff alone produces changelog-flavored docs that are stale by the next commit.
 
 ### 2. Read the project's existing docs *first*
 
@@ -43,6 +47,7 @@ For each in-scope file or cluster of related files, decide:
 - **New doc needed?** The file introduces a new module, subsystem, data shape, API surface, or UI area that isn't documented yet.
 - **Existing doc to update?** The file changes something already documented — the change may ripple into `ARCHITECTURE.md`, `data-model.md`, an API doc, or a design doc even if the changed file itself lives elsewhere.
 - **No doc change needed?** Bugfix that doesn't alter public behavior, refactor that doesn't change shape, test-only changes.
+- **Doc (or section) to remove?** The change deletes a module, endpoint, or UI area that's documented. Prune the section — or the whole doc if it's now empty — and its `INDEX.md` entry. A stale doc for deleted code is worse than no doc: it actively misleads.
 
 Also zoom out: a commit that adds a new package almost always affects the top-level architecture doc, the structure map, and the index, not just its own folder. Think about the system, not just the diff.
 
@@ -80,11 +85,15 @@ Content principles (these are the whole point — take them seriously):
 - **Call out non-obvious constraints.** Ordering requirements, side effects, who owns what, what must not be called from where. This is where docs earn their keep.
 - **Prefer tables for enumerable things** (endpoints, exports, env vars, types).
 - **ASCII diagrams for flows** when they help. One small diagram beats three paragraphs.
-- **Link, don't duplicate.** If something's explained elsewhere, link to it. Cross-link related docs.
+- **Link, don't duplicate.** Every fact lives in exactly one doc; everyone else links to it. If something's explained elsewhere, link to it. Cross-link related docs.
+- **Don't paste code into docs.** A code block copied from the source is a drift bomb — wrong the moment the source changes, and nothing flags it. Point at the code instead ("see the retry logic in `packages/queue/src/runner.ts`") and describe shapes in prose or tables. The one exception is small illustrative fragments that don't mirror real source (e.g. an example request payload).
 - **Use file paths as references** like `apps/api/src/webhooks/github.controller.ts` so a reader (or agent) can jump straight to the code.
+- **Length follows complexity, not the template.** A simple process gets a sentence, not a paragraph — "validates the payload, then enqueues it for the worker" can be the *entire* description of a simple flow. Spend words only where a reader would otherwise be surprised: constraints, ordering, ownership, the why. Filling out a section just because the heading exists is how docs bloat.
 - **Be terse.** If a section has one bullet, it probably belongs inline in another section. If a doc is under ~20 lines, consider folding it into a neighbor.
 
 Length target: most docs land between 40 and 200 lines. A subsystem deep-dive can go longer if genuinely needed.
+
+After drafting, do a **cut pass**: reread each sentence asking "what would a reader do differently because of this?" Cut the ones with no answer — restating what the code makes obvious, defining terms every developer knows, or narrating a process any reader would assume. The draft you keep should feel slightly too short.
 
 Do **not**:
 
@@ -99,9 +108,11 @@ Do **not**:
 
 If there's no `INDEX.md` yet, create one the first time you add a doc. Base the structure on whatever docs exist.
 
-### 7. Report what changed
+### 7. Verify, then report
 
-At the end, give the user a short summary: which docs were created, which were updated, which existing docs you *didn't* touch but flagged as possibly affected (so they can double-check). One short paragraph or a bulleted list.
+Quick consistency pass before reporting: every file in `docs/` has an `INDEX.md` entry, every `INDEX.md` entry points to a file that exists, and the cross-links you added resolve. A broken front door undoes the rest of the work.
+
+Then give the user a short summary: which docs were created, which were updated, which existing docs you *didn't* touch but flagged as possibly affected (so they can double-check). One short paragraph or a bulleted list.
 
 ### 8. Close the spec loop
 

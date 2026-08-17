@@ -1,7 +1,7 @@
 {
   "name": "feature-flow",
-  "version": "0.3.7",
-  "description": "An end-to-end feature workflow as a single plugin: brainstorm options, write a medium-weight spec, audit umbrellas for coherence, implement the spec (solo or via a team of agents), then document what shipped. Five sibling skills (feature-brainstorm, feature-spec, feature-spec-audit, feature-implement, doc-generator) that share conventions and reference assets — install once, get the whole flow.",
+  "version": "0.3.8",
+  "description": "An end-to-end feature workflow as a single plugin: brainstorm options, write a medium-weight spec, audit umbrellas for coherence, implement the spec (solo, via a team of agents, or as a scripted dynamic workflow), then document what shipped. Five sibling skills (feature-brainstorm, feature-spec, feature-spec-audit, feature-implement, doc-generator) that share conventions and reference assets — install once, get the whole flow.",
   "author": {
     "name": "Sofiane Akli",
     "email": "aklisof@gmail.com"
