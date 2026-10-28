@@ -123,6 +123,7 @@ The spec author wrote things in specific places for a reason. Lean on the struct
 
 - ***Approach*** tells you the shape — match it; don't reinvent.
 - ***Changes*** is the work list. If a sub-section is empty, the spec is saying "no change in that dimension."
+- **A `mockup` block** is the UI's target arrangement, wording and states — build it with the project's own components and styles; don't copy its markup or inline styles.
 - ***Open questions*** and `[?: …]` markers are blockers. Do not implement past them.
 - ***Out of scope*** is the fence. If an agent or you start drifting into out-of-scope territory, stop.
 - ***Phases*** is your work breakdown — already done for you when present.

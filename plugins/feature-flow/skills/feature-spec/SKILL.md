@@ -34,7 +34,7 @@ Trigger when the direction is decided and the user wants to formalize before imp
 
 3. **Draft the spec and show it on a page.**
    - Write the draft to `.specs/_<slug>.draft.md` (in an umbrella, `.specs/<umbrella>/_<slug>.draft.md`), using the structure below. `<slug>` is the kebab-case feature name. Where something is genuinely unclear, mark it inline as `[?: question]` rather than guessing; each marker becomes a question on the page.
-   - Run the confidence check (see "Confidence check"). Below 90%, fold a *Phases* section into the draft; either way, the result leads the page's next step.
+   - Run the confidence check (see "Confidence check"). Below 90%, fold a *Phases* section into the draft; either way, the result fills the next step's confidence line.
    - Write the page's HTML layer: key points for each section, an explainer where a flow, state or structure is hard to follow from text, a card for each `[?]` that has discrete answers, and the next step.
    - Build the page and show it, with a short chat summary. See "The spec page".
 
@@ -45,9 +45,9 @@ Trigger when the direction is decided and the user wants to formalize before imp
    - Notes are feedback on a section: answer each one in chat, or fold it into the draft.
    - Then act on the next step (step 5). If a revision *still* leaves real ambiguity, the new markers go on the revised page; fall back to one question at a time in chat only when what's left is deep, not surface-level.
 
-5. **Hand off.** The page's next step carries your pick, preselected:
+5. **Hand off.** The page's next step preselects *Apply my answers and save*: writing a spec uses much of the session's context, so implementation usually goes better in a new session that reads the saved spec. Preselect *implement* only for a very small change: unphased, about 90% sure or more, a few files — the kind a spec barely needed.
    - *Show me the revised spec* — apply the answers and notes, rebuild the page, show it again, and say in chat what changed. Back to step 4.
-   - *Apply my answers and save* — apply them, rename the draft to `<slug>.md`, and rebuild the page from it without the answered cards and the next step, so the page kept beside the md matches it. Confirm the path briefly.
+   - *Apply my answers and save* — apply them, rename the draft to `<slug>.md`, and rebuild the page from it without the answered cards and the next step, so the page kept beside the md matches it. Confirm the path briefly, then say how to start: `feature-implement` on the saved spec, in a new session.
    - *Apply my answers and implement* — save as above, then implement. If the spec is phased (or touches multiple subsystems), don't start coding inline — invoke `feature-implement`. That skill owns the decision of *how* the implementation runs (this session, a team of agents, or a scripted workflow), and it reads the *Phases* section you wrote. Implementing directly in this session is right only for the high-confidence, unphased case: a small spec you'd have recommended one-shotting anyway.
    - *Other* — the user's own words; follow them if they're a next step, and ask in chat if they're not.
 
@@ -59,8 +59,8 @@ Before the page goes up, and again whenever a revision changes scope or approach
 - Is the relevant code well-explored in this conversation, or would you be guessing?
 - Are there integration points (external APIs, async flows, migrations) where edge cases bite?
 
-Translate that into the recommendation that leads the next step:
-- **≥90% confident** → recommend one-shotting the implementation.
+Translate that into the confidence line on the page's next step — how sure, what drives it, one pass or phased — which `feature-implement` uses later. It doesn't pick the next step; *save* stays the default (step 5).
+- **≥90% confident** → one pass.
 - **Anything less** → recommend splitting the work into a few discrete phases (e.g., "1. data model + migration, 2. API endpoint, 3. UI wiring"), each verifiable before the next, and **fold them into the spec as a *Phases* section** — they're more durable there than in chat, and once the spec is saved, future-you (or another agent) can pick up phase-by-phase. If confidence is genuinely low (≪70%), say so plainly — phasing won't save a wobbly spec; refine the spec further or kick back to `feature-brainstorm`.
 
 ## Spec structure
@@ -77,18 +77,22 @@ Every spec has these five sections, in this order. They are the spine of the doc
 
 5. **Out of scope** — Explicit non-goals. What the user has agreed *not* to handle in this spec. This is the highest-leverage section in a medium-weight spec — it prevents scope creep without needing tons of detail elsewhere. Include even one or two bullets when relevant; a missing "Out of scope" is a common cause of spec drift.
 
-Write the markdown the page can render: headings, paragraphs, nested lists, quotes, fenced blocks, rules; bold, italic, code and links. No tables. A `[?: …]` inside a code span is text, not a question.
+Write the markdown the page can render: headings, paragraphs, nested lists, quotes, fenced blocks and `mockup` fences, rules; bold, italic, code and links. No tables. A `[?: …]` inside a code span is text, not a question.
 
-## Visual sketches (UI changes only, when shape isn't obvious from prose)
+## UI mockups and sketches
 
-For specs that change a UI, an inline ASCII sketch can make the *spatial arrangement* of the chosen design legible at a glance. The bar is higher than in `feature-brainstorm` because the option is already chosen — there's nothing to contrast. Add a sketch only when the layout is the substance of the change and a reader couldn't reconstruct it from the prose alone.
+A spec that adds or changes a UI carries an HTML mockup of it, so the reviewer sees the UI on the page before approving and the implementor builds from the same block. A mockup is a fenced block whose info string starts with `mockup`; the rest of the info string is its caption (`mockup Archived run`). The page renders its HTML live, in view even when the section's text folds under *Details*.
 
-- **Sketch when:** introducing a new multi-panel layout, a non-trivial modal flow, or a structural rearrangement where "where things go" is the point of the change.
-- **Don't sketch when:** the change is described well in one bullet ("add a hover-revealed delete icon to existing rows" — no sketch needed), or when the layout is unchanged from what's already in the codebase.
+- **Mockup when:** any new or changed component, screen or layout. Zoom in on the part that changes; the chrome around it stays out.
+- **No mockup when:** the change is copy, color or behaviour only, or the layout stays as it is.
+- **A wireframe, not a design.** Theme variables for every color (`var(--surface)`, `var(--line)`, `var(--accent)`), plain flex or grid layout, fluid widths (it may render in a column 340px wide), text and Unicode for icons. No project CSS, fonts, images or links to files. It shows arrangement, wording and which controls exist, not the app's real look, and `feature-implement` builds it with the project's own components rather than copying its markup.
+- **States:** the default state, plus each state the spec names (in *UI states* or *Changes*) — one `mockup` block per state, captioned with the state's name. No states invented for completeness.
 
-For sketch patterns and constraints (sizing, breathing room, "zoom in on what differs"), read `references/ascii-sketches.md` the first time a UI sketch comes up.
+Read `references/ui-mockups.md` the first time a mockup comes up in a session: the theme variables, layout rules, what never goes in, and a worked example.
 
-Sketches live in the md, in fenced blocks, so an implementor has them. Explainers (below) live only on the page.
+Flows, before/after structures, and code or terminal output stay ASCII sketches in plain fenced blocks — only when a reader couldn't reconstruct the shape from the prose. For their patterns and constraints, read `references/ascii-sketches.md` the first time one comes up.
+
+Mockups and sketches live in the md, so an implementor has them. Explainers (below) live only on the page.
 
 ## Optional sections
 
@@ -137,18 +141,18 @@ The rule of thumb: if the section would have one paragraph or fewer, fold it int
   <legend>Next step</legend>
   <p><the confidence line: how sure, what drives it, phased or one pass></p>
   <label><input type="radio" name="next" value="revise"> Show me the revised spec <small>I apply your answers and notes, then show this page again</small></label>
-  <label><input type="radio" name="next" value="save"> Apply my answers and save <small>to <code>.specs/<slug>.md</code></small></label>
+  <label><input type="radio" name="next" value="save" checked> Apply my answers and save <small>to <code>.specs/<slug>.md</code>, then implement in a new session</small></label>
   <label><input type="radio" name="next" value="implement"> Apply my answers and implement <small><how: inline, or through <code>feature-implement</code> phase by phase></small></label>
 </fieldset>
 
 <script type="text/markdown" id="spec">
 ```
 
-- **Key points** are the high-level view: 1 to 5 per section, one short line each, covering every decision and rule the user should see before approving. A point that needs two lines is detail and stays in the md. With key points, the section's text folds under *Details*, and its question cards stay in view; a section without them (a short Goal, Out of scope) shows its text as is. `data-section` names the `##` heading.
+- **Key points** are the high-level view: 1 to 5 per section, one short line each, covering every decision and rule the user should see before approving. A point that needs two lines is detail and stays in the md. With key points, the section's text folds under *Details*, and its mockups and question cards stay in view; a section without them (a short Goal, Out of scope) shows its text as is. `data-section` names the `##` heading.
 - **Explainers** are optional pictures, beside the section named in `data-section` (stacked above it on a narrow screen). Draw one only when a flow, state or structure is hard to follow from text; read `references/explainers.md` the first time one comes up in a session.
 - **Question cards** pair with markers by text: a card answers the `[?: …]` its `<legend>` repeats, so copy the marker's text exactly. Write a card when the question has discrete answers, with `checked` on your suggestion (the page tags it "Suggested"). An open-ended marker needs no card — the page gives it a text box.
 - **Every choice card gets an *Other* choice with a text box.** The runtime adds it; never write it.
-- **Next step**: the confidence line from the check, then the three choices with your pick `checked`.
+- **Next step**: the confidence line from the check, then the three choices with *save* `checked`; `checked` moves to *implement* only for a very small, unphased change (step 5).
 - Write text as HTML: wrap code and paths in `<code>`, and escape `<`, `>` and `&` (`&lt;`, `&gt;`, `&amp;`).
 
 **Build the page in one command.** The heredoc carries the layer, `sed` adds the draft, and `cat` adds the runtime, so the page appears complete in a single step:
@@ -204,7 +208,7 @@ The user pastes one markdown block from the page:
 
 ## What good specs look like
 
-- **No code snippets.** Describe shape: "a new `WorkflowQueue` service that batches webhook events into 5-second windows," not the function body. Code is the implementation's job — and code in a spec ages faster than prose.
+- **No code snippets.** Describe shape: "a new `WorkflowQueue` service that batches webhook events into 5-second windows," not the function body. Code is the implementation's job — and code in a spec ages faster than prose. A `mockup` is a picture of the UI in HTML, not a snippet to copy.
 - **Explicit about changes.** When the API or data model changes, name the change. "Adds field `runs.status_reason: string | null` to the `runs` table" beats "tracks why a run failed." Specificity is what makes a spec actionable later.
 - **Grounded in the codebase.** When the spec references existing patterns, name them with file paths. "Follows the `BackgroundJob` interface in `apps/worker/src/jobs/`" is informative; "follows our existing job pattern" is not.
 - **Honest about uncertainty.** Use `[?: question]` markers liberally while drafting. Resolved questions turn into clear sentences in the next pass; unresolved ones stay in *Open questions* until the user weighs in.
@@ -231,7 +235,7 @@ The user pastes one markdown block from the page:
 - Filename is kebab-case feature name. No date prefix.
 - Filenames starting with `_` are reserved for non-spec files (drafts, user notes, audit reports) — `feature-spec-audit`, `feature-implement` and `doc-generator` skip them. That is what keeps a draft out of their way until it's approved. Never save a spec under a leading underscore, and mention the convention if the user wants scratch notes inside an umbrella.
 - Create `.specs/` (and the umbrella subfolder if relevant) if it doesn't exist.
-- After saving, briefly confirm the path. Don't continue into implementation unless the user picked *implement* or asks — and then hand off via `feature-implement` (per step 5) rather than improvising the execution inline.
+- After saving, briefly confirm the path and say how to start: `feature-implement` on the saved spec, in a new session. Don't continue into implementation unless the user picked *implement* or asks — and then hand off via `feature-implement` (per step 5) rather than improvising the execution inline.
 
 ## Revising an existing spec
 

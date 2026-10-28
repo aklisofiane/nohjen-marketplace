@@ -1,12 +1,11 @@
 # ASCII Sketches
 
-Quick inline wireframes that make spatial differences between options legible at a glance. Read this file when an option's shape — not its concept — is what distinguishes it.
+Quick inline drawings that make a flow or a structure legible at a glance, in a plain fenced block. UI layouts are mockups now — HTML in a `mockup` fence, rendered live on the spec page (see `ui-mockups.md`); ASCII stays for flows, before/after structures, and code or terminal output. Read this file when a flow's or a structure's shape — not its concept — is the point.
 
 ## When to sketch
 
-Sketch when the *layout* or *spatial relationship* is the tradeoff:
+Sketch when the *order* or *spatial relationship* is the point:
 
-- Two UI options arrange the same content differently (split pane vs. stacked, sidebar vs. tabs, modal vs. inline editor)
 - A flow's *order* or *branching* is the point (wizard vs. single form, sync vs. async path)
 - A structural relationship is hard to convey in one bullet (parent/child, before/after a refactor)
 
@@ -25,9 +24,9 @@ Over-sketching is worse than under-sketching. The skill's value is concise, scan
 
 ## Constraints
 
-- **Size by what the sketch needs, not a fixed line count.** Typical ranges: flow diagrams 4-6 lines, row/component sketches 6-10, full layout mockups 10-18. Bigger is fine when it earns it.
+- **Size by what the sketch needs, not a fixed line count.** Typical ranges: flow diagrams 4-6 lines, before/after structures 6-10. Bigger is fine when it earns it.
 - **Zoom in on what differs between options.** If two options share the same surrounding chrome (header, sidebar, page layout), don't redraw it — sketch only the part that's actually different. Most oversized sketches come from drawing shared structure that adds no information.
-- **Give the UI room to breathe.** Pad horizontally so labels don't crowd box edges; add a blank line above and below the sketch so it doesn't fuse with prose. A cramped sketch is harder to read than a slightly larger one.
+- **Give the sketch room to breathe.** Pad horizontally so labels don't crowd box edges; add a blank line above and below the sketch so it doesn't fuse with prose. A cramped sketch is harder to read than a slightly larger one.
 - **Place above the `How:` line** so the reader sees the shape before the prose.
 - **Use box-drawing characters**: `┌ ─ ┐ │ └ ┘ ├ ┤ ┬ ┴ ┼` (lighter than `+--+|`). Arrows: `→ ← ↑ ↓`.
 - **Label sparingly** — short words inside boxes, not full sentences. The prose explains; the sketch shows.
@@ -35,97 +34,6 @@ Over-sketching is worse than under-sketching. The skill's value is concise, scan
 - **Annotations go on their own line below the row they describe**, prefixed with `└─` or `↑`, indented to point at the element. Don't trail them on the same line — it crushes the sketch.
 
 ## Patterns
-
-### Split pane (sidebar + main)
-
-```
-┌────────────────┬────────────────────────────────────┐
-│  Sidebar       │   Main view                        │
-│                │                                    │
-│   • Inbox      │     [ content area ]               │
-│   • Sent       │                                    │
-│   • Drafts     │                                    │
-│                │                                    │
-└────────────────┴────────────────────────────────────┘
-```
-
-Good for: navigation-heavy UIs, list+detail layouts, anywhere persistent context matters.
-
-### Stacked / single column
-
-```
-┌────────────────────────────────────┐
-│   Header                           │
-├────────────────────────────────────┤
-│                                    │
-│     [ content ]                    │
-│                                    │
-├────────────────────────────────────┤
-│   Footer / actions                 │
-└────────────────────────────────────┘
-```
-
-Good for: focused single-task views, mobile-first, forms.
-
-### Table row with inline action (hover-revealed)
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  ●  workflow-name      webhook · push   2h ago · 14s   [on]  🗑  │
-└──────────────────────────────────────────────────────────────────┘
-                                                                ↑
-                                                  fades in on row hover
-```
-
-Good for: showing where an action lives in a dense row, calling out hover/visibility behavior with an arrow annotation.
-
-### Row with kebab menu (popover)
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  ●  workflow-name    webhook · push   2h ago · 14s   [on]  ⋯  │
-└────────────────────────────────────────────────────────────────┘
-                                                            └──┐
-                                                    ┌──────────▼─┐
-                                                    │  Delete    │
-                                                    │  Rename    │
-                                                    │  Duplicate │
-                                                    └────────────┘
-```
-
-Good for: extensible action lists, distinguishing "one action visible" vs "menu of actions" tradeoffs.
-
-### Modal over base view
-
-```
-┌────────────────────────────────────────────┐
-│   Base view (dimmed)                       │
-│                                            │
-│        ┌──────────────────────────┐        │
-│        │   Modal title            │        │
-│        │                          │        │
-│        │   [ form fields ]        │        │
-│        │                          │        │
-│        │           [Cancel] [OK]  │        │
-│        └──────────────────────────┘        │
-│                                            │
-└────────────────────────────────────────────┘
-```
-
-Good for: distinguishing modal vs. inline-edit options, confirming "interrupting flow" tradeoffs.
-
-### List → detail (master-detail)
-
-```
-┌──────────────┐       ┌──────────────────────────────┐
-│  Item 1  ●   │  ──►  │   Item 1 detail              │
-│  Item 2      │       │                              │
-│  Item 3      │       │     [ fields ]               │
-│  Item 4      │       │                              │
-└──────────────┘       └──────────────────────────────┘
-```
-
-Good for: clarifying selection-driven views, "click row → side panel" patterns.
 
 ### Flow / sequence
 
@@ -153,4 +61,4 @@ Good for: extraction/decomposition options, showing structural change.
 
 ## Final note
 
-If you're unsure whether a sketch helps, write the option's bullets first. If after reading them a reader could draw the layout themselves in their head, skip the sketch. If they couldn't, add one.
+If you're unsure whether a sketch helps, write the option's bullets first. If after reading them a reader could draw the flow or structure themselves in their head, skip the sketch. If they couldn't, add one.

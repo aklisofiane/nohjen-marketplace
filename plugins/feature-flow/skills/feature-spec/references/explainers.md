@@ -1,11 +1,12 @@
 # Explainers
 
-An explainer is one picture for the person reading a page. On the spec page it sits beside the section it explains; the md keeps prose and ASCII sketches only, so an implementor gets the same shape without it. On the brainstorm page it sits inside an option and shows that option's shape (see "In a brainstorm option"). Both pages use the same markup and drawing kit.
+An explainer is one picture for the person reading a page. On the spec page it sits beside the section it explains; the md keeps prose, mockups and ASCII sketches, so an implementor gets the same shape without it. On the brainstorm page it sits inside an option and shows that option's shape (see "In a brainstorm option"). Both pages use the same markup and drawing kit.
 
 ## When to draw
 
 - **Draw** when a flow, state or structure is hard to follow from text: data moving between stores, a lifecycle with a few states, a request crossing services, what happens over time, a before/after of a structure.
 - **Don't draw** when the prose already carries it, to restate a list of changes, or to decorate a section. Most specs need none; a large one, one or two. At most one per section.
+- **A UI the spec builds is a mockup in the md, not an explainer** (see `ui-mockups.md`): the implementor needs it as much as the reviewer does.
 
 ## The eli5 rule
 

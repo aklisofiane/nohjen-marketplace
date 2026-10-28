@@ -29,7 +29,27 @@ Archived runs disappear from all list views and search. A run permalink to an ar
 - `GET /runs/:id` gains a fallback lookup into `runs_archive`; response gets an `archived: boolean` field. No other endpoints change — list endpoints already filter by recency.
 
 **UI**
-- Run detail page renders a read-only banner state when `archived: true`. No changes to list views.
+- Run detail page renders a read-only state when `archived: true`: a banner under the header, and *Re-run* disabled. No changes to list views.
+
+```mockup Archived run
+<style>
+  .run { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg); }
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .muted { color: var(--ink-3); font-size: 13px; }
+  .btn { margin-left: auto; padding: 3px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; opacity: .45; }
+  .banner { display: flex; flex-wrap: wrap; gap: 2px 10px; padding: 9px 14px; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
+  .rest { padding: 10px 14px; color: var(--ink-3); font-size: 13px; }
+</style>
+<div class="run">
+  <div class="head">
+    <b>Run #4821</b>
+    <span class="muted">nightly-sync · 92 days ago</span>
+    <span class="btn">↻ Re-run</span>
+  </div>
+  <div class="banner"><b>Archived</b> <span>Read-only. Runs older than 90 days move to the archive.</span></div>
+  <div class="rest">Steps, logs and outputs, as today</div>
+</div>
+```
 
 ## Phases
 
@@ -53,6 +73,6 @@ _None — resolved during review: retention is workspace-level, not per-workflow
 
 - Every concrete claim is checkable at implementation time: table names, column types, file paths, batch size as a constraint (not code).
 - *Approach* explains two non-obvious decisions (archive-not-delete, permalink fallback) with their reasons — that's the thinking an implementor can't reconstruct alone.
-- *Changes* has only the sub-sections this feature needs; "UI" is two lines because that's all the UI change there is.
-- No function bodies, no SQL, no component markup — shape only.
+- *Changes* has only the sub-sections this feature needs; "UI" is one line and one mockup because that's all the UI change there is, and the mockup zooms in on the run header where the banner goes, not the whole page.
+- No function bodies, no SQL, no component code — shape only. The mockup is a wireframe in the page's theme, not markup to copy (see `ui-mockups.md`).
 - *Out of scope* is doing real work: all three bullets are things a well-meaning implementor might otherwise add.

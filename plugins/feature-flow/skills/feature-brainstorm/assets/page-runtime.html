@@ -129,6 +129,10 @@
   .sp-body hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
   .sp-body a { color: var(--accent); }
   .sp pre.sketch { margin: 0 0 12px; padding: 10px 12px; overflow-x: auto; background: var(--term); color: var(--term-ink); border-radius: 10px; font: 12px/1.6 var(--mono); white-space: pre; }
+  /* Mockups: a `mockup` fence's HTML in a shadow root on the box's body, so its styles and the page's stay apart; the theme's variables still reach it */
+  .sp-mock { margin: 0 0 14px; padding: 12px 14px 14px; background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; }
+  .sp-mock figcaption { margin-bottom: 10px; font-size: 11px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); }
+  .sp-mock-body { overflow-x: auto; }
 
   /* Explainers: Claude's pictures, beside the section they explain */
   .explain { margin: 0; padding: 12px 14px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
@@ -273,7 +277,10 @@
         const effort = o.el.querySelector('.effort');
         if (effort) {
           const level = { small: 1, medium: 2, large: 3 }[(effort.textContent.match(/small|medium|large/i) || [''])[0].toLowerCase()] || 0;
-          effort.prepend(el('span', 'bs-meter', [1, 2, 3].map(n => `<i class="${n <= level ? 'on' : ''}"></i>`).join('')));
+          // The line's words go in one span, so a <code> in them stays in the sentence instead of becoming its own flex item
+          const words = el('span');
+          words.append(...effort.childNodes);
+          effort.append(el('span', 'bs-meter', [1, 2, 3].map(n => `<i class="${n <= level ? 'on' : ''}"></i>`).join('')), words);
           foot.appendChild(effort);
         } else foot.appendChild(el('span'));
         const noteBtn = el('button', 'pg-btn', 'Add note');
@@ -351,7 +358,7 @@
     const md = src.textContent.replace(/<\\\/(script)/gi, '</$1').replace(/<\\!--/g, '<!--');
 
     // Markdown: the subset specs use (headings, paragraphs, lists, quotes, fenced blocks, rules; bold, italic, code, links)
-    const markers = [];
+    const markers = [], mocks = [];
     let section = '';
     const inline = s => {
       const keep = [], raw = [];
@@ -407,11 +414,15 @@
       const line = lines[i];
       let m;
       if (!line.trim()) { i++; continue; }
-      if (/^```/.test(line)) {
+      if ((m = line.match(/^```\s*(.*)$/))) {
         const body = [];
         for (i++; i < lines.length && !/^```\s*$/.test(lines[i]); i++) body.push(lines[i]);
         i++;
-        add(() => `<pre class="sketch">${esc(body.join('\n'))}</pre>`);
+        // A `mockup` fence becomes a captioned box; its HTML waits in `mocks` for the shadow root
+        const mock = m[1].trim().match(/^mockup(?:\s+(.*))?$/i);
+        add(() => mock
+          ? `<figure class="sp-mock"><figcaption>Mockup${mock[1] ? ' · ' + esc(mock[1]) : ''}</figcaption><div class="sp-mock-body" data-mock="${mocks.push(body.join('\n')) - 1}"></div></figure>`
+          : `<pre class="sketch">${esc(body.join('\n'))}</pre>`);
       } else if ((m = line.match(/^(#{1,6})\s+(.*?)\s*#*$/))) {
         i++;
         const level = m[1].length, text = m[2];
@@ -498,6 +509,10 @@
       s.cardsBox.before(k);
     });
     if (loose.children.length) main.insertBefore(loose, sections.length ? sections[0].el : null);
+
+    // A folded section keeps its mockups in view too, under the key points; then each mockup's HTML goes in its shadow root
+    sections.filter(s => s.more).forEach(s => $$('.sp-mock', s.text).forEach(f => s.cardsBox.before(f)));
+    $$('.sp-mock-body', main).forEach(b => { b.attachShadow({ mode: 'open' }).innerHTML = mocks[b.dataset.mock]; });
 
     // Cards pair with [?: …] markers by text: a fieldset.ask answers the marker its legend repeats.
     // A marker with no card gets a text box; a card with no marker goes under "More questions".
