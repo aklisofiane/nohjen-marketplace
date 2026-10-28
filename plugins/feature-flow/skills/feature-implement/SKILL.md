@@ -27,7 +27,7 @@ Trigger when there is (or could be) a spec at `.specs/` and the user wants to st
 
 1. **Resolve the target spec.**
    - If the user named one (`.specs/auth/session-strategy.md`, "the workflow-row-actions spec", "the auth umbrella"), use it. Resolve umbrella names by globbing `.specs/<name>/SPEC_PLAN.md`.
-   - Otherwise glob `.specs/*.md` (standalone) and `.specs/*/SPEC_PLAN.md` (umbrellas). One match → use it; multiple matches → ask which one to implement; none → tell the user there's nothing in `.specs/` and recommend `feature-spec` first.
+   - Otherwise glob `.specs/*.md` (standalone) and `.specs/*/SPEC_PLAN.md` (umbrellas), skipping files that start with `_` (drafts and notes — a `_<slug>.draft.md` is a spec still in review). One match → use it; multiple matches → ask which one to implement; none → tell the user there's nothing in `.specs/` and recommend `feature-spec` first.
    - If the resolved target is an **umbrella** (`SPEC_PLAN.md`), ask whether to implement a single sub-spec, a contiguous slice, or the whole umbrella. Before doing the whole umbrella in one go, recommend `feature-spec-audit` first — drift across siblings is much cheaper to fix in prose than in code.
 
 2. **Read everything that matters.** The spec is the brief.

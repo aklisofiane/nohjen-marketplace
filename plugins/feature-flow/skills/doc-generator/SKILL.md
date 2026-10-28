@@ -121,7 +121,8 @@ Then give the user a short summary: which docs were created, which were updated,
 After step 7, do a quick check:
 
 - **Glob `.specs/*/SPEC_PLAN.md`.** For each one, read the unchecked items (`- [ ]`). If any unchecked item plausibly matches what was just documented (the sub-feature name appears in the changed files, the doc updates, or the commit message), ask the user to confirm completion (*Mark complete* / *Not yet*). If yes, flip the checkbox from `- [ ]` to `- [x]` and append a one-line note (e.g., `— shipped in commit abc1234`).
-- **Also check standalone specs** (`.specs/*.md` outside subdirectories). If a feature name matches what was just documented, ask whether to *Delete the spec file*, *Keep it*, or *Leave it for me to handle*. Default to keeping; never delete without explicit confirmation.
+- **Also check standalone specs** (`.specs/*.md` outside subdirectories). If a feature name matches what was just documented, ask whether to *Delete the spec file*, *Keep it*, or *Leave it for me to handle*. Default to keeping; never delete without explicit confirmation. When the user picks delete, delete its page `.specs/<slug>.spec.html` with it.
+- **Skip files that start with `_`** in both checks: they are drafts and notes, not specs (a `_<slug>.draft.md` is a spec still in review).
 
 When asking either of these, prefer `AskUserQuestion` if available. If `.specs/` doesn't exist or there's no plausible match, skip silently — the loop closes only when there's something to close.
 

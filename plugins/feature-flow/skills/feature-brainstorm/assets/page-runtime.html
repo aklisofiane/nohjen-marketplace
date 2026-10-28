@@ -1,0 +1,626 @@
+</script>
+<!-- feature-flow page runtime, shared by brainstorm and spec pages. Appended to the end of a page with `cat`; turns the
+     markup from feature-brainstorm › "Output format" or feature-spec › "The spec page" into a page the user answers in
+     place (picks, notes, Respond). A page that carries <script type="text/markdown"> is a spec page; any other is a
+     brainstorm page. The </script> above closes a spec page's markdown block; a brainstorm page ignores it.
+     Keep it self-contained: the desktop side panel loads pages as standalone copies, so linked files would not load. -->
+
+<style data-pg>
+  :root {
+    --bg: #f6f5f1; --surface: #fff; --surface-2: #efede7; --ink: #1d1c1a; --ink-2: #55524c; --ink-3: #8a867e;
+    --line: #e2dfd6; --accent: #b4541f; --accent-soft: #fbf1ea; --on-accent: #fff; --pro: #2c7a4d; --con: #b03a2c;
+    --warn: #a2741c; --term: #1a1c1e; --term-ink: #d9dbd4;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131312; --surface: #1c1c1a; --surface-2: #252522; --ink: #ecebe5; --ink-2: #b2afa6; --ink-3: #7e7b73;
+      --line: #33322e; --accent: #e08a5c; --accent-soft: #2a1d16; --on-accent: #1a0f09; --pro: #7fcb9c; --con: #ec8c7c;
+      --warn: #dcb26a; --term: #0c0d0e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+  code { font: .86em var(--mono); background: var(--surface-2); padding: .05em .35em; border-radius: 5px; }
+
+  /* Shared by both modes: page, headings, tags, buttons, notes, Other, the Respond bar and sheet */
+  .pg { max-width: 1080px; margin: 0 auto; padding: 36px 28px 120px; }
+  @media (max-width: 640px) { .pg { padding: 22px 16px 120px; } }
+  .pg-h { margin: 34px 0 12px; font-size: 12px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .pg-tag { font-size: 11px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+  .pg-btn { font: 600 13px var(--sans); color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 11px; cursor: pointer; }
+  .pg-btn:hover { border-color: var(--ink-3); }
+  .pg-btn.pri { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pg textarea { display: block; width: 100%; min-height: 64px; resize: vertical; padding: 8px 10px; font: 14px/1.45 var(--sans); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+  .pg textarea[hidden] { display: none; }
+  .pg fieldset label.pg-other { align-items: center; }
+  .pg-other input[type="text"] { flex: 1 1 180px; min-width: 0; padding: 4px 8px; font: 14px var(--sans); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+
+  .pg-bar { position: fixed; right: 20px; bottom: 20px; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; box-shadow: 0 6px 24px rgba(0, 0, 0, .12); font-size: 13.5px; max-width: calc(100% - 32px); }
+  .pg-bar .pg-btn { border-radius: 99px; }
+  .pg-sheet { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .4); }
+  .pg-sheet[hidden] { display: none; }
+  .pg-sheet > div { width: min(640px, 100%); max-height: 86vh; display: flex; flex-direction: column; gap: 12px; padding: 18px; background: var(--surface); border-radius: 14px; }
+  .pg-sheet pre { margin: 0; flex: 1; overflow: auto; padding: 12px; background: var(--surface-2); border-radius: 8px; font: 12.5px/1.55 var(--mono); white-space: pre-wrap; }
+  .pg-sheet .row { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Brainstorm mode: options, a pick, follow-up questions */
+  .bs h1 { font-size: clamp(24px, 3.4vw, 32px); line-height: 1.2; letter-spacing: -.01em; margin: 0 0 10px; }
+  .bs .goal { margin: 0; max-width: 760px; font-size: 16.5px; color: var(--ink-2); }
+  .bs .goal b { color: var(--ink); }
+  .bs .context { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .bs .context li { padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; color: var(--ink-2); }
+
+  .bs-options { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+  .bs .option { margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+  .bs .option.picked { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .bs-head { display: flex; align-items: flex-start; gap: 10px; }
+  .bs-head .pg-tag { display: inline-block; margin-top: 2px; }
+  .bs-letter { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--surface-2); font-weight: 700; }
+  .picked .bs-letter { background: var(--accent); color: var(--on-accent); }
+  .bs .option h2 { margin: 0; font-size: 16px; line-height: 1.3; }
+  .bs-pick { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 99px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .bs-pick input { accent-color: var(--accent); margin: 0; }
+  .picked .bs-pick { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .bs .how { margin: 0; font-size: 14px; color: var(--ink-2); }
+  .bs .pros, .bs .cons { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: 14px; }
+  .bs .pros li, .bs .cons li { position: relative; padding-left: 20px; }
+  .bs .pros li::before, .bs .cons li::before { position: absolute; left: 2px; font-weight: 700; }
+  .bs .pros li::before { content: "+"; color: var(--pro); }
+  .bs .cons li::before { content: "−"; color: var(--con); }
+  .bs .sketch { margin: 0; padding: 10px 12px; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 12.5px; }
+  .bs pre.sketch { background: var(--term); color: var(--term-ink); border-color: transparent; font: 12px/1.6 var(--mono); white-space: pre; }
+  .bs-foot { margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .bs .effort { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+  .bs-meter { display: inline-flex; gap: 3px; }
+  .bs-meter i { width: 13px; height: 6px; border-radius: 3px; background: var(--surface-2); }
+  .bs-meter i.on { background: var(--ink-2); }
+
+  .bs .recommendation { margin: 0; padding: 16px 18px; border-radius: 12px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); font-size: 15.5px; }
+  .bs .recommendation b { color: var(--accent); }
+  .bs .ask { margin: 0 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: grid; gap: 6px; }
+  .bs .ask legend { float: left; width: 100%; padding: 0; margin-bottom: 4px; font-weight: 650; }
+  .bs .ask label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  .bs .ask label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .bs .ask input { accent-color: var(--accent); }
+  .bs .ask small { color: var(--ink-3); font-size: 13px; }
+
+  /* Spec mode: the markdown, one block per ## heading, with key points, explainers and question cards */
+  .sp { line-height: 1.6; }
+  .sp-kicker { font-size: 12px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .sp h1 { font-size: clamp(26px, 3.6vw, 34px); line-height: 1.2; letter-spacing: -.01em; margin: 4px 0 8px; }
+  .sp-sec { padding: 22px 0 18px; border-top: 1px solid var(--line); }
+  .sp-sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .sp-sec-head h2 { margin: 0; font-size: 19px; line-height: 1.3; }
+  .sp-sec-head .pg-btn { margin-left: auto; }
+  .sp-grid { display: grid; gap: 24px; }
+  .sp-body { max-width: 740px; min-width: 0; }
+  .has-ex .sp-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; }
+  .sp-aside { position: sticky; top: 16px; min-width: 0; }
+  @media (max-width: 820px) { .has-ex .sp-grid { grid-template-columns: 1fr; } .sp-aside { position: static; order: -1; } }
+  .sp-body > :first-child, .sp-text > :first-child { margin-top: 0; }
+
+  /* Key points: Claude's short highlights; with them, the section's markdown folds under Details */
+  .sp .key { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+  .sp .key li { padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 8px; }
+  .sp .key li::before { margin-right: 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--k, var(--ink-3)); }
+  .sp .key .decision { --k: var(--accent); border-left-color: var(--accent); }
+  .sp .key .decision::before { content: "Decision"; }
+  .sp .key .rule { --k: var(--con); border-left-color: var(--con); }
+  .sp .key .rule::before { content: "Rule"; }
+  .sp .key .change { --k: var(--ink-2); border-left-color: var(--ink-3); }
+  .sp .key .change::before { content: "Change"; }
+  .sp .key .risk { --k: var(--warn); border-left-color: var(--warn); }
+  .sp .key .risk::before { content: "Risk"; }
+  .sp-more summary { width: fit-content; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+  .sp-more summary:hover { color: var(--ink); }
+  .sp-more[open] summary { margin-bottom: 10px; }
+  .sp-body p, .sp-body ul, .sp-body ol, .sp-body blockquote { margin: 0 0 12px; }
+  .sp-body ul, .sp-body ol { padding-left: 22px; }
+  .sp-body li { margin: 4px 0; }
+  .sp-body li > ul, .sp-body li > ol { margin: 4px 0 0; }
+  .sp-body h3, .sp-body h4 { margin: 16px 0 6px; font-size: 15px; }
+  .sp-body blockquote { padding-left: 12px; border-left: 3px solid var(--line); color: var(--ink-2); }
+  .sp-body hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+  .sp-body a { color: var(--accent); }
+  .sp pre.sketch { margin: 0 0 12px; padding: 10px 12px; overflow-x: auto; background: var(--term); color: var(--term-ink); border-radius: 10px; font: 12px/1.6 var(--mono); white-space: pre; }
+
+  /* Explainers: Claude's pictures, beside the section they explain */
+  .explain { margin: 0; padding: 12px 14px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+  .explain + .explain { margin-top: 14px; }
+  .explain figcaption { margin-bottom: 10px; font-size: 11px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); }
+  .explain > p { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
+  .explain svg { display: block; width: 100%; height: auto; font: 12px var(--sans); overflow: visible; }
+  /* Drawing kit: classes an explainer's SVG uses so it follows the light and dark theme */
+  .explain .box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.2; }
+  .explain .box.hi { fill: var(--accent-soft); stroke: var(--accent); }
+  .explain .ln { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+  .explain .ln.hi { stroke: var(--accent); }
+  .explain .ln.dash { stroke-dasharray: 4 4; }
+  .explain .t { fill: var(--ink); }
+  .explain .t2 { fill: var(--ink-2); }
+  .explain .t3 { fill: var(--ink-3); font-size: 11px; }
+  .explain .hi.t, .explain .hi.t2, .explain .hi.t3 { fill: var(--accent); }
+  .explain .b { font-weight: 650; }
+  .explain .mono { font-family: var(--mono); }
+  .explain .dot { fill: var(--pro); }
+  .explain .dot.old { fill: var(--ink-3); }
+  .explain .head { fill: var(--ink-3); }
+  .explain .head.hi { fill: var(--accent); }
+
+  /* Question cards, placed after the text that asks; the next step */
+  .sp .sp-chip { display: inline-grid; place-items: center; min-width: 24px; height: 19px; padding: 0 6px; margin: 0 2px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; text-decoration: none; vertical-align: 1px; }
+  .sp .ask, .sp .next { margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-soft); display: grid; gap: 6px; scroll-margin: 40px; transition: box-shadow .3s; }
+  .sp .ask.flash { box-shadow: 0 0 0 3px var(--accent); }
+  .sp .ask legend, .sp .next legend { float: left; width: 100%; padding: 0; margin-bottom: 2px; font-weight: 650; display: flex; gap: 8px; align-items: baseline; }
+  .pg-num { flex: none; font-size: 11px; font-weight: 700; color: var(--on-accent); background: var(--accent); border-radius: 99px; padding: 1px 7px; }
+  .sp .ask label, .sp .next label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 7px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  .sp .ask label:has(input:checked), .sp .next label:has(input:checked) { border-color: var(--accent); }
+  .sp .ask input, .sp .next input { accent-color: var(--accent); }
+  .sp .ask small, .sp .next small { color: var(--ink-3); font-size: 13px; }
+  .sp .next { border-color: var(--line); background: var(--surface); }
+  .sp .next p { margin: 0 0 4px; color: var(--ink-2); }
+  .sp textarea { margin-top: 8px; }
+  .sp .ask textarea { margin-top: 0; background: var(--surface); }
+</style>
+<script data-pg>
+(() => {
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  const heading = text => el('div', 'pg-h', text);
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const norm = s => (s || '').replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const plain = node => { const c = node.cloneNode(true); $$('small, .pg-tag, .pg-num', c).forEach(n => n.remove()); return c.textContent.replace(/\s+/g, ' ').trim(); };
+  const quote = (text, pad) => text.trim().split('\n').map(l => `${pad}> ${l}`).join('\n');
+  const checked = (root, name) => (root.querySelector(`input[name="${CSS.escape(name || '')}"]:checked`) || {}).value;
+  const setChecked = (root, value) => { const i = value && root.querySelector(`input[value="${CSS.escape(value)}"]`); if (i) i.checked = true; };
+  const generalNote = main => {
+    main.appendChild(heading('Anything else'));
+    const t = main.appendChild(el('textarea'));
+    t.placeholder = 'A note for Claude, if any';
+    return t;
+  };
+  const notesBlock = (L, notes) => {
+    if (!notes.length) return;
+    L.push('', '## Notes');
+    notes.forEach(([name, text]) => L.push(`- **${name}**`, quote(text, '  ')));
+  };
+
+  // A choice card (fieldset.ask or fieldset.next): tag the suggested answer and add an Other choice with a text box;
+  // Claude never writes Other. A card holding a textarea instead of choices is free text.
+  const choice = card => {
+    const q = { card, ta: card.querySelector('textarea'), name: (card.querySelector('input') || {}).name };
+    const def = card.querySelector('input:checked');
+    q.def = def && def.value;
+    if (def) def.closest('label').appendChild(el('span', 'pg-tag', 'Suggested'));
+    if (!q.ta) {
+      const label = card.appendChild(el('label', 'pg-other', `<input type="radio" name="${esc(q.name || '')}" value="__other"> Other`));
+      q.other = label.appendChild(el('input'));
+      q.other.type = 'text';
+      q.other.placeholder = 'Your own answer';
+      const select = () => {
+        const radio = label.querySelector('input');
+        if (!radio.checked) { radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); }
+      };
+      ['focus', 'click', 'input'].forEach(type => q.other.addEventListener(type, select));
+    }
+    q.value = () => q.ta ? q.ta.value : checked(card, q.name);
+    q.restore = (v, other) => { if (q.ta) q.ta.value = v || ''; else setChecked(card, v); if (q.other) q.other.value = other || ''; };
+    q.open = () => { const v = q.value(); return q.ta ? !v.trim() : !v || (v === '__other' && !q.other.value.trim()); };
+    // One answer line for Respond; Other's typed text is quoted like a note
+    q.answer = pad => {
+      if (q.ta) return q.ta.value.trim() ? quote(q.ta.value, pad) : `${pad}→ _no answer_`;
+      const cur = card.querySelector(`input[name="${CSS.escape(q.name || '')}"]:checked`);
+      if (!cur) return `${pad}→ _no answer_`;
+      const was = q.def && cur.value !== q.def && card.querySelector(`input[value="${CSS.escape(q.def)}"]`);
+      const mark = was ? `  ✎ (suggested: ${plain(was.closest('label'))})` : q.def ? '  _(kept as suggested)_' : '';
+      if (cur.value === '__other') return `${pad}→ **Other**${mark}` + (q.other.value.trim() ? '\n' + quote(q.other.value, pad) : '  _(left empty)_');
+      return `${pad}→ **${plain(cur.closest('label'))}**${mark}`;
+    };
+    return q;
+  };
+
+  // Brainstorm mode: options, a pick, follow-up questions
+  const brainstorm = () => {
+    const main = el('main', 'pg bs');
+    [...document.body.childNodes].forEach(n => { if (!(n.nodeType === 1 && n.hasAttribute('data-pg'))) main.appendChild(n); });
+    document.body.prepend(main);
+
+    const h1 = main.querySelector('h1');
+    const title = h1 ? h1.textContent.trim() : document.title;
+    if (!document.title) document.title = title;
+    const goal = main.querySelector('.goal');
+    if (goal) goal.prepend(el('b', '', 'Goal: '));
+    const context = main.querySelector('.context');
+    if (context) context.before(heading('Context'));
+
+    const recEl = main.querySelector('.recommendation');
+    const optEls = $$('.option', main);
+    const options = optEls.map((o, i) => ({ el: o, letter: o.id || 'ABCDEF'[i], name: (o.querySelector('h2') || {}).textContent || '' }));
+    const rec = (recEl && recEl.dataset.option) || (options.find(o => o.el.hasAttribute('data-recommended')) || {}).letter;
+    if (optEls.length) {
+      const grid = el('div', 'bs-options');
+      optEls[0].before(heading('Options'), grid);
+      options.forEach(o => {
+        grid.appendChild(o.el);
+        const h2 = o.el.querySelector('h2');
+        const head = el('div', 'bs-head');
+        head.appendChild(el('div', 'bs-letter', o.letter));
+        const name = el('div');
+        if (h2) name.appendChild(h2);
+        if (o.letter === rec) name.appendChild(el('span', 'pg-tag', 'Recommended'));
+        head.appendChild(name);
+        head.appendChild(el('label', 'bs-pick', `<input type="radio" name="bs-pick" value="${o.letter}"> Pick`));
+        o.el.prepend(head);
+
+        const foot = el('div', 'bs-foot');
+        const effort = o.el.querySelector('.effort');
+        if (effort) {
+          const level = { small: 1, medium: 2, large: 3 }[(effort.textContent.match(/small|medium|large/i) || [''])[0].toLowerCase()] || 0;
+          effort.prepend(el('span', 'bs-meter', [1, 2, 3].map(n => `<i class="${n <= level ? 'on' : ''}"></i>`).join('')));
+          foot.appendChild(effort);
+        } else foot.appendChild(el('span'));
+        const noteBtn = el('button', 'pg-btn', 'Add note');
+        noteBtn.type = 'button';
+        foot.appendChild(noteBtn);
+        o.el.appendChild(foot);
+        o.note = el('textarea');
+        o.note.placeholder = `Note on ${o.letter}`;
+        o.note.hidden = true;
+        o.el.appendChild(o.note);
+        noteBtn.onclick = () => { o.note.hidden = false; o.note.focus(); };
+      });
+    }
+
+    if (recEl) {
+      const r = options.find(o => o.letter === rec);
+      if (rec) recEl.prepend(el('b', '', `${rec}${r ? ' · ' + r.name : ''}. `));
+      recEl.before(heading('Recommendation'));
+    }
+
+    const asks = $$('fieldset.ask', main).map(f => {
+      const q = choice(f);
+      const legend = f.querySelector('legend');
+      q.q = legend ? plain(legend) : f.id;
+      return q;
+    });
+    if (asks.length) asks[0].card.before(heading('Questions'));
+    const general = generalNote(main);
+
+    const pickInputs = $$('input[name="bs-pick"]', main);
+    const picked = () => (pickInputs.find(i => i.checked) || {}).value;
+    pickInputs.forEach(i => { i.checked = i.value === rec; });
+    const notes = () => [...options.filter(o => o.note.value.trim()).map(o => [`${o.letter} · ${o.name}`, o.note.value]),
+      ...(general.value.trim() ? [['General', general.value]] : [])];
+
+    return {
+      main, title, store: 'bs:' + location.pathname + ':' + title,
+      state: () => ({ pick: picked(), notes: Object.fromEntries(options.map(o => [o.letter, o.note.value])), general: general.value,
+        asks: Object.fromEntries(asks.map(a => [a.name, a.value()])),
+        others: Object.fromEntries(asks.filter(a => a.other).map(a => [a.name, a.other.value])) }),
+      restore: s => {
+        if (s.pick) pickInputs.forEach(i => { i.checked = i.value === s.pick; });
+        options.forEach(o => { o.note.value = (s.notes || {})[o.letter] || ''; o.note.hidden = !o.note.value; });
+        general.value = s.general || '';
+        asks.forEach(a => a.restore((s.asks || {})[a.name], (s.others || {})[a.name]));
+      },
+      status: () => {
+        const p = picked();
+        options.forEach(o => o.el.classList.toggle('picked', o.letter === p));
+        const n = notes().length;
+        return `Pick: ${p || '—'}` + (n ? ` · ${n} note${n > 1 ? 's' : ''}` : '');
+      },
+      response: () => {
+        const p = picked();
+        const opt = options.find(o => o.letter === p);
+        const L = [`# Re: ${title}`, ''];
+        L.push(`**Pick:** ${p ? `${p} · ${opt.name}` : 'none'}` + (p && rec ? (p === rec ? '  _(as recommended)_' : `  ✎ (recommended: ${rec})`) : ''));
+        if (asks.length) {
+          L.push('', '## Questions');
+          asks.forEach((a, i) => L.push(`${i + 1}. ${a.q}`, a.answer('   ')));
+        }
+        notesBlock(L, notes());
+        return L.join('\n');
+      },
+    };
+  };
+
+  // Spec mode: the markdown block rendered, with Claude's HTML layer (key points, explainers, cards, next step) put in place
+  const spec = src => {
+    // The build escapes what would end the markdown block early; show it back as written
+    const md = src.textContent.replace(/<\\\/(script)/gi, '</$1').replace(/<\\!--/g, '<!--');
+
+    // Markdown: the subset specs use (headings, paragraphs, lists, quotes, fenced blocks, rules; bold, italic, code, links)
+    const markers = [];
+    let section = '';
+    const inline = s => {
+      const keep = [], raw = [];
+      const stash = (html, text) => { raw.push(text); return `\u0000${keep.push(html) - 1}\u0000`; };
+      // Code first, so a [?: …] written inside a code span stays text
+      s = s.replace(/`([^`]+)`/g, (text, c) => stash(`<code>${esc(c)}</code>`, text));
+      s = s.replace(/\[\?:\s*([^\]]+)\]/g, (_, q) => {
+        const n = markers.push({ q: q.replace(/\u0000(\d+)\u0000/g, (_, k) => raw[k]).trim(), section });
+        return stash(`<a class="sp-chip" href="#q${n}" title="Question ${n}">?${n}</a>`, '');
+      });
+      s = esc(s)
+        .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => `<a href="${/^(https?:|#|\.{0,2}\/)/.test(u) ? u : '#'}">${t}</a>`)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^\w*])\*(?![\s*])(.+?)\*(?!\w)/g, '$1<em>$2</em>')
+        .replace(/(^|\W)_(?!\s)(.+?)_(?!\w)/g, '$1<em>$2</em>');
+      return s.replace(/\u0000(\d+)\u0000/g, (_, k) => keep[k]);
+    };
+
+    const LIST = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+    const list = rows => {
+      const items = [];
+      rows.forEach(r => {
+        const m = r.match(LIST);
+        if (m) items.push({ indent: m[1].length, ordered: /\d/.test(m[2]), text: m[3] });
+        else if (items.length) items[items.length - 1].text += ' ' + r.trim();
+      });
+      const build = (k, indent) => {
+        const tag = items[k].ordered ? 'ol' : 'ul';
+        const lis = [];
+        while (k < items.length && items[k].indent >= indent) {
+          if (items[k].indent > indent) {
+            const [sub, next] = build(k, items[k].indent);
+            if (lis.length) lis[lis.length - 1] += sub; else lis.push(sub);
+            k = next;
+          } else lis.push(inline(items[k++].text));
+        }
+        return [`<${tag}>${lis.map(li => `<li>${li}</li>`).join('')}</${tag}>`, k];
+      };
+      return build(0, items[0].indent)[0];
+    };
+
+    const START = /^(#{1,6}\s|```|>|\s*([-*+]|\d+[.)])\s|(-{3,}|\*{3,}|_{3,})\s*$)/;
+    const lines = md.replace(/\r\n?/g, '\n').split('\n');
+    let titleHtml = '';
+    const intro = [], sections = [];
+    let cur = null;
+    const add = render => {
+      const from = markers.length;
+      const html = render();
+      (cur ? cur.blocks : intro).push({ html, qs: markers.slice(from).map((_, j) => from + j + 1) });
+    };
+    for (let i = 0; i < lines.length;) {
+      const line = lines[i];
+      let m;
+      if (!line.trim()) { i++; continue; }
+      if (/^```/.test(line)) {
+        const body = [];
+        for (i++; i < lines.length && !/^```\s*$/.test(lines[i]); i++) body.push(lines[i]);
+        i++;
+        add(() => `<pre class="sketch">${esc(body.join('\n'))}</pre>`);
+      } else if ((m = line.match(/^(#{1,6})\s+(.*?)\s*#*$/))) {
+        i++;
+        const level = m[1].length, text = m[2];
+        if (level === 1 && !titleHtml) titleHtml = inline(text);
+        else if (level <= 2) { section = text; cur = { name: text, html: inline(text), blocks: [] }; sections.push(cur); }
+        else add(() => `<h${level}>${inline(text)}</h${level}>`);
+      } else if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
+        i++;
+        add(() => '<hr>');
+      } else if (/^>/.test(line)) {
+        const body = [];
+        while (i < lines.length && /^>/.test(lines[i])) body.push(lines[i++].replace(/^>\s?/, ''));
+        add(() => `<blockquote>${inline(body.join(' '))}</blockquote>`);
+      } else if (LIST.test(line)) {
+        const rows = [];
+        while (i < lines.length && lines[i].trim() && (LIST.test(lines[i]) || /^\s+\S/.test(lines[i]))) rows.push(lines[i++]);
+        add(() => list(rows));
+      } else {
+        const body = [lines[i++].trim()];
+        while (i < lines.length && lines[i].trim() && !START.test(lines[i])) body.push(lines[i++].trim());
+        add(() => `<p>${inline(body.join(' '))}</p>`);
+      }
+    }
+
+    // The HTML layer Claude wrote above the markdown
+    const layer = $$('body > *').filter(n => n !== src && !n.hasAttribute('data-pg'));
+    const version = (md + layer.map(n => n.outerHTML).join('')).split('').reduce((h, c) => (h * 33 ^ c.charCodeAt(0)) >>> 0, 5381).toString(36);
+    const explainers = layer.filter(n => n.matches('figure.explain'));
+    const cards = layer.filter(n => n.matches('fieldset.ask'));
+    const next = layer.find(n => n.matches('fieldset.next'));
+    const keys = layer.filter(n => n.matches('ul.key'));
+    const extra = layer.filter(n => !explainers.includes(n) && !cards.includes(n) && !keys.includes(n) && n !== next);
+
+    const main = el('main', 'pg sp');
+    document.body.prepend(main);
+    main.appendChild(el('div', 'sp-kicker', 'Spec'));
+    const h1 = main.appendChild(el('h1', '', titleHtml || esc(document.title)));
+    const title = h1.textContent.trim();
+    if (!document.title) document.title = title;
+    extra.forEach(n => main.appendChild(n));
+    const slots = b => b.qs.map(n => `<div class="sp-slot" data-q="${n}"></div>`).join('');
+    if (intro.length) main.appendChild(el('div', 'sp-body', intro.map(b => b.html + slots(b)).join('')));
+
+    sections.forEach(s => {
+      s.el = el('section', 'sp-sec');
+      const head = el('div', 'sp-sec-head');
+      head.appendChild(el('h2', '', s.html));
+      s.plain = head.textContent.trim();
+      const noteBtn = el('button', 'pg-btn', 'Add note');
+      noteBtn.type = 'button';
+      head.appendChild(noteBtn);
+      s.grid = el('div', 'sp-grid');
+      s.body = s.grid.appendChild(el('div', 'sp-body'));
+      s.text = s.body.appendChild(el('div', 'sp-text', s.blocks.map(b => b.html + slots(b)).join('')));
+      s.note = el('textarea');
+      s.note.placeholder = `Note on ${s.plain}`;
+      s.note.hidden = true;
+      noteBtn.onclick = () => { s.note.hidden = false; s.note.focus(); };
+      s.el.append(head, s.grid, s.note);
+      main.appendChild(s.el);
+    });
+
+    // Explainers go beside the section named in data-section; unmatched ones lead the page
+    const loose = el('div');
+    explainers.forEach(f => {
+      const s = sections.find(x => norm(x.plain) === norm(f.dataset.section));
+      if (!s) return loose.appendChild(f);
+      let aside = s.grid.querySelector('.sp-aside');
+      if (!aside) { aside = s.grid.appendChild(el('aside', 'sp-aside')); s.el.classList.add('has-ex'); }
+      aside.appendChild(f);
+    });
+
+    // Key points lead their section; the section's markdown then folds under Details
+    keys.forEach(k => {
+      const s = sections.find(x => norm(x.plain) === norm(k.dataset.section));
+      if (!s) return loose.appendChild(k);
+      if (!s.more) {
+        s.more = el('details', 'sp-more', '<summary>Details</summary>');
+        s.text.replaceWith(s.more);
+        s.more.appendChild(s.text);
+        s.cardsBox = el('div');
+        s.more.before(s.cardsBox);
+      }
+      s.cardsBox.before(k);
+    });
+    if (loose.children.length) main.insertBefore(loose, sections.length ? sections[0].el : null);
+
+    // Cards pair with [?: …] markers by text: a fieldset.ask answers the marker its legend repeats.
+    // A marker with no card gets a text box; a card with no marker goes under "More questions".
+    const same = s => norm(s).replace(/[\s?.!:]+$/, '');
+    const unpaired = cards.slice();
+    const qs = markers.map((m, idx) => {
+      const n = idx + 1;
+      const k = unpaired.findIndex(c => same((c.querySelector('legend') || {}).textContent) === same(m.q));
+      let card = k >= 0 ? unpaired.splice(k, 1)[0] : null;
+      if (!card) {
+        card = el('fieldset', 'ask');
+        card.append(el('legend', '', inline(m.q)), el('textarea'));
+        card.querySelector('textarea').placeholder = 'Your answer';
+      }
+      // A folded section keeps its cards in view, after the key points
+      const slot = main.querySelector(`.sp-slot[data-q="${n}"]`);
+      const home = slot && sections.find(x => x.more && x.text.contains(slot));
+      if (home) { home.cardsBox.appendChild(card); slot.remove(); }
+      else if (slot) slot.replaceWith(card);
+      else main.appendChild(card);
+      return { n, card, section: m.section };
+    });
+    if (unpaired.length) {
+      main.appendChild(heading('More questions'));
+      unpaired.forEach((card, j) => { main.appendChild(card); qs.push({ n: markers.length + j + 1, card, section: '' }); });
+    }
+    qs.forEach((q, i) => {
+      qs[i] = Object.assign(choice(q.card), q);
+      q.card.id = 'q' + q.n;
+      const legend = q.card.querySelector('legend');
+      if (legend) legend.prepend(el('span', 'pg-num', '?' + q.n));
+      qs[i].q = legend ? plain(legend) : '';
+    });
+
+    let nx = null;
+    if (next) {
+      if (!next.querySelector('legend')) main.appendChild(heading('Next step'));
+      main.appendChild(next);
+      nx = choice(next);
+    }
+    const general = generalNote(main);
+
+    main.addEventListener('click', e => {
+      const chip = e.target.closest('.sp-chip');
+      if (!chip) return;
+      e.preventDefault();
+      const card = document.getElementById(chip.getAttribute('href').slice(1));
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('flash');
+      setTimeout(() => card.classList.remove('flash'), 900);
+    });
+
+    const notes = () => [...sections.filter(x => x.note.value.trim()).map(x => [x.plain, x.note.value]),
+      ...(general.value.trim() ? [['General', general.value]] : [])];
+
+    return {
+      // Answers are kept per version of the page, so a revised spec starts clean
+      main, title, store: 'sp:' + location.pathname + ':' + version,
+      state: () => ({ notes: Object.fromEntries(sections.map(x => [x.plain, x.note.value])), general: general.value,
+        answers: Object.fromEntries(qs.map(q => [q.n, q.value()])),
+        others: Object.fromEntries(qs.filter(q => q.other).map(q => [q.n, q.other.value])),
+        next: nx && nx.value(), nextOther: nx && nx.other.value }),
+      restore: s => {
+        sections.forEach(x => { x.note.value = (s.notes || {})[x.plain] || ''; x.note.hidden = !x.note.value; });
+        general.value = s.general || '';
+        qs.forEach(q => q.restore((s.answers || {})[q.n], (s.others || {})[q.n]));
+        if (nx) nx.restore(s.next, s.nextOther);
+      },
+      status: () => {
+        const open = qs.filter(q => q.open()).length;
+        const n = notes().length;
+        const parts = [];
+        if (qs.length) parts.push(`${qs.length - open}/${qs.length} answered`);
+        if (n) parts.push(`${n} note${n > 1 ? 's' : ''}`);
+        return parts.join(' · ') || 'No open questions';
+      },
+      response: () => {
+        const L = [`# Re: ${title} (spec)`];
+        if (qs.length) {
+          L.push('', '## Questions');
+          qs.forEach(q => L.push(`${q.n}. ${q.q}` + (q.section ? `  _(${q.section})_` : ''), q.answer('   ')));
+        }
+        notesBlock(L, notes());
+        if (nx) L.push('', '## Next step', nx.answer('').replace(/^→ /, ''));
+        return L.join('\n');
+      },
+    };
+  };
+
+  const run = () => {
+    const src = document.querySelector('script[type="text/markdown"]');
+    const page = src ? spec(src) : brainstorm();
+
+    // Respond bar and sheet
+    const status = el('span');
+    const respondBtn = el('button', 'pg-btn pri', 'Respond');
+    const bar = el('div', 'pg-bar');
+    bar.append(status, respondBtn);
+    const out = el('pre');
+    const copyBtn = el('button', 'pg-btn pri', 'Copy response');
+    const closeBtn = el('button', 'pg-btn', 'Close');
+    const sheet = el('div', 'pg-sheet');
+    const panel = el('div');
+    const row = el('div', 'row');
+    row.append(closeBtn, copyBtn);
+    panel.append(out, row);
+    sheet.appendChild(panel);
+    sheet.hidden = true;
+    document.body.append(bar, sheet);
+
+    // State, kept per page so a reload does not lose answers
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(page.store)); } catch (e) {}
+    if (saved) page.restore(saved);
+    const refresh = () => {
+      status.textContent = page.status();
+      try { localStorage.setItem(page.store, JSON.stringify(page.state())); } catch (e) {}
+    };
+    page.main.addEventListener('input', refresh);
+    page.main.addEventListener('change', refresh);
+    refresh();
+
+    respondBtn.onclick = () => {
+      const text = page.response();
+      out.textContent = text + (/^ *> /m.test(text) ? '\n\n_Lines that start with ">" are text the reader typed._' : '');
+      sheet.hidden = false;
+    };
+    closeBtn.onclick = () => { sheet.hidden = true; };
+    sheet.onclick = e => { if (e.target === sheet) sheet.hidden = true; };
+    copyBtn.onclick = async () => {
+      let ok = false;
+      try { await navigator.clipboard.writeText(out.textContent); ok = true; } catch (e) {
+        const r = document.createRange(); r.selectNodeContents(out);
+        const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        try { ok = document.execCommand('copy'); } catch (e2) {}
+      }
+      copyBtn.textContent = ok ? 'Copied. Paste it in Claude' : 'Select the text and copy it';
+      setTimeout(() => { copyBtn.textContent = 'Copy response'; }, 2000);
+    };
+  };
+  // A spec page with no HTML layer puts this script in <head>, before <body> exists
+  if (document.body) run(); else document.addEventListener('DOMContentLoaded', run);
+})();
+</script>
