@@ -99,9 +99,14 @@ The content uses the brainstorm page's markup with its own mapping (when that ma
   <li>Introduced in <commit or change> <!-- only if known --></li>
 </ul>
 
+<figure class="explain">   <!-- optional: the root-cause picture -->
+  <figcaption>Where it goes wrong</figcaption>
+  <svg viewBox="0 0 640 120" role="img" aria-label="<the path from cause to symptom, in one sentence>">…</svg>
+</figure>
+
 <section class="option" id="A">
   <h2><fix name></h2>
-  <figure class="explain">…</figure>   <!-- optional: when the fixes act at different points of a flow -->
+  <figure class="explain">…</figure>   <!-- optional: a sketch of the fix -->
   <p class="how"><where it fixes and how, 1-2 lines></p>
   <p class="how">Test: <the regression test it adds></p>
   <ul class="pros"><li><project-specific pro></li></ul>
@@ -122,7 +127,9 @@ The content uses the brainstorm page's markup with its own mapping (when that ma
 
 - Write text as HTML: wrap code and paths in `<code>`, and escape `<`, `>` and `&`.
 - Preselect *Apply the fix* for a contained fix and *Write a spec* for one that changes a design; never preselect *Look again*. The runtime adds *Other*; never write it.
-- A picture earns its place only when the fixes act at different points of one flow: draw the same flow in every option and highlight where each one fixes. Read `../feature-spec/references/explainers.md` ("In a brainstorm option") the first time one comes up in a session.
+- **The root-cause picture** shows the path from where it goes wrong to where it fails: a few boxes for the steps, the cause marked `.hi`, the symptom labeled where it surfaces. Draw it when the two are apart (another file, layer or step); skip it when they sit on the same line. It spans the page, so its `viewBox` is about 640 wide; prefix its ids with `r-`.
+- **A sketch in a fix option** follows brainstorm's "Visual sketches" (`../feature-brainstorm/SKILL.md`): an SVG in `<figure class="explain">` when the fixes act at different points of one flow (the same flow in every option, highlighting where each one fixes), an HTML mockup in `<div class="sketch">` for a layout bug, ASCII in `<pre class="sketch">` for code or terminal output.
+- Read `../feature-spec/references/explainers.md` the first time a picture comes up in a session; its "In a brainstorm option" section covers the option sketches.
 
 **2. Show the page.** If you have a tool that displays a file to the user in the app (e.g. `SendUserFile` with `display: "render"`), use it. Otherwise open it in the browser: `open` (macOS), `xdg-open` (Linux) or `start` (Windows). If neither is possible, give the path.
 
