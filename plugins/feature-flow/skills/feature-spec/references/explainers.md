@@ -1,6 +1,6 @@
 # Explainers
 
-An explainer is one picture on the spec page, beside the section it explains. It is for the person reviewing the spec. The md keeps prose and ASCII sketches only, so an implementor gets the same shape without it.
+An explainer is one picture for the person reading a page. On the spec page it sits beside the section it explains; the md keeps prose and ASCII sketches only, so an implementor gets the same shape without it. On the brainstorm page it sits inside an option and shows that option's shape (see "In a brainstorm option"). Both pages use the same markup and drawing kit.
 
 ## When to draw
 
@@ -56,6 +56,28 @@ Arrowheads are markers defined once per explainer, then used with `marker-end`:
   <marker id="rr-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path class="head" d="M0,0 L8,4 L0,8 z"/></marker>
 </defs>
 <path class="ln" d="M296 138 C 300 176, 384 160, 414 194" marker-end="url(#rr-a)"/>
+```
+
+## In a brainstorm option
+
+A picture inside an option, above `.how`, shows that option's shape; the brainstorm's *Visual sketches* section says when an option gets one. The rules above hold, with these differences:
+
+- **No `data-section`.** The figure sits in the option's markup, where it shows.
+- **A `viewBox` about 360 wide.** With two or three options a column is 300 to 480px; a 520-wide picture would shrink its 12px text below 8px. The height is whatever the picture needs, usually 100 to 180.
+- **The figcaption and the `<p>` are optional.** `.how` already says what the option does; keep the line only when the picture's point isn't in it.
+- **Draw every option the same way**: the same `viewBox`, the same box for the same thing, in the same place, so only the difference between options changes. The highlight goes to what this option adds or changes.
+- **Prefix ids per option**, such as `a-` and `b-`: all options share one document.
+
+```html
+<section class="option" id="A">
+  <h2>…</h2>
+  <figure class="explain">
+    <svg viewBox="0 0 360 150" role="img" aria-label="<the picture in one sentence>">
+      <defs><marker id="a-a" …><path class="head" d="M0,0 L8,4 L0,8 z"/></marker></defs>
+      …
+    </svg>
+  </figure>
+  <p class="how">…</p>
 ```
 
 ## Worked example: run retention

@@ -79,12 +79,16 @@
 
   .bs .recommendation { margin: 0; padding: 16px 18px; border-radius: 12px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); font-size: 15.5px; }
   .bs .recommendation b { color: var(--accent); }
-  .bs .ask { margin: 0 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: grid; gap: 6px; }
-  .bs .ask legend { float: left; width: 100%; padding: 0; margin-bottom: 4px; font-weight: 650; }
-  .bs .ask label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
-  .bs .ask label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-  .bs .ask input { accent-color: var(--accent); }
-  .bs .ask small { color: var(--ink-3); font-size: 13px; }
+  .bs .ask, .bs .next { margin: 0 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: grid; gap: 6px; }
+  .bs .ask legend, .bs .next legend { float: left; width: 100%; padding: 0; margin-bottom: 4px; font-weight: 650; }
+  .bs .ask label, .bs .next label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  .bs .ask label:has(input:checked), .bs .next label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .bs .ask input, .bs .next input { accent-color: var(--accent); }
+  .bs .ask small, .bs .next small { color: var(--ink-3); font-size: 13px; }
+  .bs .next p { margin: 0 0 4px; font-size: 14px; color: var(--ink-2); }
+  /* An explainer as an option's picture: a tighter frame, so the column's width goes to the picture */
+  .bs .option .explain { padding: 10px; border-radius: 10px; }
+  .bs .option .explain figcaption { margin-bottom: 8px; }
 
   /* Spec mode: the markdown, one block per ## heading, with key points, explainers and question cards */
   .sp { line-height: 1.6; }
@@ -175,6 +179,8 @@
   const quote = (text, pad) => text.trim().split('\n').map(l => `${pad}> ${l}`).join('\n');
   const checked = (root, name) => (root.querySelector(`input[name="${CSS.escape(name || '')}"]:checked`) || {}).value;
   const setChecked = (root, value) => { const i = value && root.querySelector(`input[value="${CSS.escape(value)}"]`); if (i) i.checked = true; };
+  // Answers are kept per version of the page, so a revised page opens clean
+  const hash = s => s.split('').reduce((h, c) => (h * 33 ^ c.charCodeAt(0)) >>> 0, 5381).toString(36);
   const generalNote = main => {
     main.appendChild(heading('Anything else'));
     const t = main.appendChild(el('textarea'));
@@ -186,6 +192,14 @@
     L.push('', '## Notes');
     notes.forEach(([name, text]) => L.push(`- **${name}**`, quote(text, '  ')));
   };
+  // The next step (fieldset.next) goes after the questions, before the general note; Respond ends with it
+  const nextStep = (main, card) => {
+    if (!card) return null;
+    if (!card.querySelector('legend')) main.appendChild(heading('Next step'));
+    main.appendChild(card);
+    return choice(card);
+  };
+  const nextBlock = (L, nx) => { if (nx) L.push('', '## Next step', nx.answer('').replace(/^→ /, '')); };
 
   // A choice card (fieldset.ask or fieldset.next): tag the suggested answer and add an Other choice with a text box;
   // Claude never writes Other. A card holding a textarea instead of choices is free text.
@@ -221,9 +235,10 @@
     return q;
   };
 
-  // Brainstorm mode: options, a pick, follow-up questions
+  // Brainstorm mode: options, a pick, follow-up questions, the next step
   const brainstorm = () => {
     const main = el('main', 'pg bs');
+    const version = hash([...document.body.children].filter(n => !n.hasAttribute('data-pg')).map(n => n.outerHTML).join(''));
     [...document.body.childNodes].forEach(n => { if (!(n.nodeType === 1 && n.hasAttribute('data-pg'))) main.appendChild(n); });
     document.body.prepend(main);
 
@@ -286,6 +301,7 @@
       return q;
     });
     if (asks.length) asks[0].card.before(heading('Questions'));
+    const nx = nextStep(main, main.querySelector('fieldset.next'));
     const general = generalNote(main);
 
     const pickInputs = $$('input[name="bs-pick"]', main);
@@ -295,15 +311,17 @@
       ...(general.value.trim() ? [['General', general.value]] : [])];
 
     return {
-      main, title, store: 'bs:' + location.pathname + ':' + title,
+      main, title, store: 'bs:' + location.pathname + ':' + version,
       state: () => ({ pick: picked(), notes: Object.fromEntries(options.map(o => [o.letter, o.note.value])), general: general.value,
         asks: Object.fromEntries(asks.map(a => [a.name, a.value()])),
-        others: Object.fromEntries(asks.filter(a => a.other).map(a => [a.name, a.other.value])) }),
+        others: Object.fromEntries(asks.filter(a => a.other).map(a => [a.name, a.other.value])),
+        next: nx && nx.value(), nextOther: nx && nx.other.value }),
       restore: s => {
         if (s.pick) pickInputs.forEach(i => { i.checked = i.value === s.pick; });
         options.forEach(o => { o.note.value = (s.notes || {})[o.letter] || ''; o.note.hidden = !o.note.value; });
         general.value = s.general || '';
         asks.forEach(a => a.restore((s.asks || {})[a.name], (s.others || {})[a.name]));
+        if (nx) nx.restore(s.next, s.nextOther);
       },
       status: () => {
         const p = picked();
@@ -321,6 +339,7 @@
           asks.forEach((a, i) => L.push(`${i + 1}. ${a.q}`, a.answer('   ')));
         }
         notesBlock(L, notes());
+        nextBlock(L, nx);
         return L.join('\n');
       },
     };
@@ -419,7 +438,7 @@
 
     // The HTML layer Claude wrote above the markdown
     const layer = $$('body > *').filter(n => n !== src && !n.hasAttribute('data-pg'));
-    const version = (md + layer.map(n => n.outerHTML).join('')).split('').reduce((h, c) => (h * 33 ^ c.charCodeAt(0)) >>> 0, 5381).toString(36);
+    const version = hash(md + layer.map(n => n.outerHTML).join(''));
     const explainers = layer.filter(n => n.matches('figure.explain'));
     const cards = layer.filter(n => n.matches('fieldset.ask'));
     const next = layer.find(n => n.matches('fieldset.next'));
@@ -513,12 +532,7 @@
       qs[i].q = legend ? plain(legend) : '';
     });
 
-    let nx = null;
-    if (next) {
-      if (!next.querySelector('legend')) main.appendChild(heading('Next step'));
-      main.appendChild(next);
-      nx = choice(next);
-    }
+    const nx = nextStep(main, next);
     const general = generalNote(main);
 
     main.addEventListener('click', e => {
@@ -536,7 +550,6 @@
       ...(general.value.trim() ? [['General', general.value]] : [])];
 
     return {
-      // Answers are kept per version of the page, so a revised spec starts clean
       main, title, store: 'sp:' + location.pathname + ':' + version,
       state: () => ({ notes: Object.fromEntries(sections.map(x => [x.plain, x.note.value])), general: general.value,
         answers: Object.fromEntries(qs.map(q => [q.n, q.value()])),
@@ -563,7 +576,7 @@
           qs.forEach(q => L.push(`${q.n}. ${q.q}` + (q.section ? `  _(${q.section})_` : ''), q.answer('   ')));
         }
         notesBlock(L, notes());
-        if (nx) L.push('', '## Next step', nx.answer('').replace(/^→ /, ''));
+        nextBlock(L, nx);
         return L.join('\n');
       },
     };

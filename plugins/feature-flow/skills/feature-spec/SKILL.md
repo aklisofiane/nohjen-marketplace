@@ -86,7 +86,7 @@ For specs that change a UI, an inline ASCII sketch can make the *spatial arrange
 - **Sketch when:** introducing a new multi-panel layout, a non-trivial modal flow, or a structural rearrangement where "where things go" is the point of the change.
 - **Don't sketch when:** the change is described well in one bullet ("add a hover-revealed delete icon to existing rows" — no sketch needed), or when the layout is unchanged from what's already in the codebase.
 
-For sketch patterns and constraints (sizing, breathing room, "zoom in on what differs"), read `../feature-brainstorm/references/ascii-sketches.md` the first time a UI sketch comes up. The patterns are the same as the ones the brainstorming skill uses — the two skills share this reference deliberately.
+For sketch patterns and constraints (sizing, breathing room, "zoom in on what differs"), read `references/ascii-sketches.md` the first time a UI sketch comes up.
 
 Sketches live in the md, in fenced blocks, so an implementor has them. Explainers (below) live only on the page.
 

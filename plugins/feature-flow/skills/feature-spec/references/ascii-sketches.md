@@ -1,4 +1,4 @@
-# ASCII Sketches for Feature Brainstorming
+# ASCII Sketches
 
 Quick inline wireframes that make spatial differences between options legible at a glance. Read this file when an option's shape — not its concept — is what distinguishes it.
 
