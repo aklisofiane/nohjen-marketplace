@@ -1,153 +1,84 @@
 ---
 name: doc-generator
-description: Generate or update project documentation from the latest git commit or from a specific set of files passed as arguments. Use this skill whenever the user asks to document their code, refresh the docs, write an API doc, a data-model doc, a design/UI doc, or says things like "document what I just changed", "update the docs after my commit", "doc these files", or "add documentation for X". Also use when the user wants docs that both humans and AI agents can read — structured markdown, not inline code comments. Produces concise, high-signal markdown files that slot into an existing `docs/` folder, updates the doc index, and fits into the project's own doc conventions rather than imposing a generic template.
+description: Generate or update project documentation from the latest git commit or from files passed as arguments. Use when the user asks to document their code, refresh or update the docs, write an API, data-model or design/UI doc, or says "document what I just changed", "doc these files", "add documentation for X". Writes terse markdown for humans and agents into the project's `docs/`, following its existing conventions, and keeps the index in sync.
 ---
 
 # Doc Generator
 
-Generate or update project documentation from source code. Input is either:
-
-- **The latest commit** (default when no files are given): use `git show --name-only HEAD` to find the files that changed, document those, and also think at a higher level about whether the change affects any existing docs elsewhere.
-- **A specific list of files/paths** the user passes: document those.
-
-The end deliverable is markdown files written into the project's `docs/` folder (creating it if absent), organized using the folder structure described below, with `docs/INDEX.md` kept in sync.
-
-## Why this skill exists
-
-Good docs make a codebase readable for both humans and AI agents. The goal is **just enough detail** — purpose, shape, responsibilities, key flows, non-obvious constraints. Not line-by-line narration, not exhaustive API dumps, not marketing fluff. A future reader (human or agent) should be able to open a doc and, within a few minutes, know what the thing is and where to look next.
+Write or update markdown docs in the project's `docs/` folder from the latest commit (default) or from files the user names. A reader — human or agent — should learn within minutes what a thing is, how it fits, and where to look next. Nothing more.
 
 ## Workflow
 
-Follow these steps in order. They're not rigid — use judgment — but most invocations will hit each one.
+### 1. Scope
 
-### 1. Figure out the scope
+- **Default** → files changed in HEAD: `git show --name-only --pretty=format: HEAD`, plus the commit message for intent. Merge commit → `git diff HEAD^1 HEAD --name-only`.
+- **"Refresh / update the docs"** → everything since docs were last touched: `git diff $(git log -1 --format=%H -- docs/)..HEAD --name-only`. "Last N commits" → `git diff HEAD~N..HEAD --name-only`.
+- **Dirty working tree** → the user may mean uncommitted work (`git diff HEAD --name-only`). Ask if unclear.
+- **Explicit paths** → use exactly; resolve globs.
+- Skip lockfiles, generated output (`.d.ts`, snapshots), and config churn unless asked.
 
-- No args / just "document the latest commit" → run `git show --name-only --pretty=format: HEAD` (or `git log -1 --name-only --pretty=format:`) to get the changed files. Also read the commit message for intent. If HEAD is a merge commit this lists nothing — use `git diff HEAD^1 HEAD --name-only` instead.
-- "Refresh the docs" / "update the docs" with no specific commit in mind → the user usually means *everything since the docs were last touched*, not just HEAD. Find the last commit that touched `docs/` (`git log -1 --format=%H -- docs/`) and diff from there: `git diff <that>..HEAD --name-only`. Similarly, "the last N commits" → `git diff HEAD~N..HEAD --name-only`.
-- Working tree dirty → the user may mean their uncommitted work rather than HEAD (`git diff HEAD --name-only`). If it's ambiguous which they mean, ask.
-- Explicit paths → use those exactly. Resolve globs if any.
-- Exclude lockfiles, generated files, pure config churn, and anything that isn't meaningfully documentable unless the user asked for it.
+The diff says *where to look*; the current code says *what to write*. Read the files, not just the diff — docs describe what the system **is**, not what changed.
 
-The diff tells you *where to look*; the current code tells you *what to write*. Read the in-scope files themselves, not just the diff — docs describe what the system **is**, not what changed (the commit message already covers that). Writing from the diff alone produces changelog-flavored docs that are stale by the next commit.
+### 2. Read existing docs first
 
-### 2. Read the project's existing docs *first*
+Read `docs/INDEX.md` (or `docs/README.md`) and skim 2–3 docs for tone, heading depth, file naming, and folder layout (`design-docs/`, `adr/`, per-package READMEs, a `documentation/` folder). Follow the project's conventions everywhere; the defaults below apply only where it has none. In a monorepo, update existing package READMEs in place and keep root `docs/` for cross-cutting concerns.
 
-Before writing anything, look at what's already in `docs/`. Skills must adapt to the project, not the other way around.
+### 3. Decide: create, update, remove, or nothing
 
-- Read `docs/INDEX.md` (or `docs/README.md`) if present — this is the map.
-- Skim 2–3 existing doc files to pick up tone, heading depth, use of tables/diagrams, and naming conventions (e.g. `UPPERCASE.md` vs `kebab-case.md`, top-level vs. subfolders).
-- Note any folder conventions (e.g. `docs/design-docs/` for subsystem deep-dives, `docs/adr/` for decisions).
+- **Create** — a new module, subsystem, data shape, API surface, or UI area.
+- **Update** — changes something already documented, including ripple into `ARCHITECTURE.md`, `data-model.md`, API or design docs.
+- **Remove** — deleted code that's documented. Prune the section, or the whole doc if empty. A stale doc misleads.
+- **Nothing** — bugfixes with no behavior change, shape-preserving refactors, test-only changes.
 
-Match what's there. Don't invent a new structure if one exists.
+Think about the system, not the diff: a new package usually touches architecture and structure docs too. Group a wide commit by domain, not file by file.
 
-### 3. Decide what to create vs. update
+`ARCHITECTURE.md` is *why* (responsibilities, data flow, contracts); `STRUCTURE.md` is *where* (directory map, one line per folder). A new directory, moved responsibility, or renamed module updates `STRUCTURE.md` even when architecture is unchanged.
 
-For each in-scope file or cluster of related files, decide:
+### 4. Doc types (defaults)
 
-- **New doc needed?** The file introduces a new module, subsystem, data shape, API surface, or UI area that isn't documented yet.
-- **Existing doc to update?** The file changes something already documented — the change may ripple into `ARCHITECTURE.md`, `data-model.md`, an API doc, or a design doc even if the changed file itself lives elsewhere.
-- **No doc change needed?** Bugfix that doesn't alter public behavior, refactor that doesn't change shape, test-only changes.
-- **Doc (or section) to remove?** The change deletes a module, endpoint, or UI area that's documented. Prune the section — or the whole doc if it's now empty — and its `INDEX.md` entry. A stale doc for deleted code is worse than no doc: it actively misleads.
+| File | Covers |
+|---|---|
+| `docs/INDEX.md` | One line per doc. Always present. |
+| `docs/ARCHITECTURE.md` | Apps/packages, cross-cutting flows, infra dependencies |
+| `docs/STRUCTURE.md` | Shallow directory map |
+| `docs/data-model.md` | Schemas/types others depend on |
+| `docs/API.md` | HTTP/RPC/WS endpoints, public package exports |
+| `docs/FRONTEND.md` | Routes, pages, major components |
+| `docs/DESIGN.md` | Visual tokens from Tailwind config / CSS variables / theme files (palette, type, spacing, radii), plus the intended feel; describe what's observable when there are no theme files |
+| `docs/SECURITY.md` | Auth, secrets, sandboxing, permissions |
+| `docs/RELIABILITY.md` | Retries, idempotency, crash recovery, cancellation |
+| `docs/design-docs/<subsystem>.md` | A subsystem too big for a section in ARCHITECTURE |
+| `docs/adr/NNNN-title.md` | Only if the project already uses ADRs |
 
-Also zoom out: a commit that adds a new package almost always affects the top-level architecture doc, the structure map, and the index, not just its own folder. Think about the system, not just the diff.
+Setup, scripts, and "run locally" go in the root `README.md`. Update `DEVELOPMENT.md` / `CONTRIBUTING.md` only if one already exists; never create one.
 
-**`ARCHITECTURE.md` vs `STRUCTURE.md`:** architecture is *why* (responsibilities, data flow, contracts); structure is *where* (directory map, one-line notes per folder). Keep them separate — architecture drifts slowly, structure drifts with every refactor. If a change touches the shape of the repo (new directory, moved responsibility, renamed module), update `STRUCTURE.md` even when `ARCHITECTURE.md` stays still.
+No `docs/` yet → create it with `INDEX.md` and only the docs the current change needs.
 
-### 4. Pick the right doc type
+### 5. Write
 
-The folder structure below is a *default*. If the project already uses different names (e.g. `ARCHITECTURE.md` vs `architecture.md`), follow the project. Otherwise use these:
+- **Lead with purpose.** First sentence: what it is and why it exists.
+- **Shape, not lines.** Concepts, responsibilities, flows, public surface. No function or variable names that a rename would break — the code is the source of truth for specifics. Never restate code in prose.
+- **No pasted code.** Point at it by path (`packages/queue/src/runner.ts`). Only illustrative fragments that mirror no real source (e.g. an example payload).
+- **Spend words on surprises only:** ordering, side effects, ownership, what must not call what, the why. A simple flow gets one sentence.
+- **Tables for enumerable things** (endpoints, exports, env vars, types); fragments are fine in cells and bullets. A small ASCII diagram beats paragraphs for a flow.
+- **One home per fact.** Link instead of repeating — including what `INDEX.md`, README, or a parent doc already says.
+- **Updates replace, not append.** Rewrite the affected section and delete what the change made stale; an update shouldn't grow a doc by default.
+- **No filler:** no "Overview" restating the title, no "This document describes…", no summary or conclusion, no ToC on short files, no changelog / "Recent changes", no TODOs or author tags.
+- **Size:** keep docs under ~200 lines (a deep-dive may exceed it when it must). A one-bullet section belongs inline elsewhere; a doc under ~20 lines folds into a neighbor.
 
-| Doc type | Filename | When to create |
-|---|---|---|
-| Overview / map | `docs/INDEX.md` | Always. Update whenever a doc is added/removed. |
-| System architecture | `docs/ARCHITECTURE.md` | New app/package, cross-cutting flow change, new infra dependency |
-| Repo structure map | `docs/STRUCTURE.md` | New app/package added, top-level directory reshuffled, or responsibilities of an existing directory materially shift. Shallow map — what lives where — not a line-by-line tour |
-| Data model | `docs/data-model.md` | Schema/types touched that others depend on |
-| API surface | `docs/API.md` | HTTP/RPC/WS endpoints or public package exports changed |
-| Frontend / UI | `docs/FRONTEND.md` | Route, page, or major component added |
-| Design / visual | `docs/DESIGN.md` | Palette, typography, spacing, component look-and-feel — pull tokens from Tailwind config / CSS variables / theme files when they exist; describe feel when they don't |
-| Security | `docs/SECURITY.md` | Auth, secrets handling, sandboxing, permissions |
-| Reliability | `docs/RELIABILITY.md` | Retries, idempotency, crash recovery, cancellation |
-| Subsystem deep-dive | `docs/design-docs/<subsystem>.md` | A single subsystem (e.g. queue runner, auth flow) needs more than a section in ARCHITECTURE |
-| Decision record | `docs/adr/NNNN-title.md` | Only if the project already uses ADRs |
-
-**Where setup, scripts, and "how to run locally" belong:** the project's root `README.md`, not a new `docs/DEVELOPMENT.md`. Only create a `DEVELOPMENT.md` or `CONTRIBUTING.md` doc if the project *already has one* — then update it in place. README is the universally expected home for prerequisites, install commands, and everyday npm/make/cargo scripts; duplicating this into `docs/` makes it a second place to keep in sync and readers won't look there first.
-
-The "DESIGN" doc is dual-purpose: for UI-heavy changes, it covers both visual tokens (colors from the Tailwind config, fonts, spacing scale) **and** the feel/intent (what the UI is trying to communicate). Read the actual theme files when they exist; otherwise describe what's observable from the components.
-
-### 5. Write the docs
-
-Content principles (these are the whole point — take them seriously):
-
-- **Lead with purpose.** First sentence answers "what is this and why does it exist?" — not "this file contains...".
-- **Describe shape, not lines.** Name the exports, the public API, the key data flows. Don't paraphrase every function.
-- **Stay high-level to avoid drift.** Docs should help a reader understand *what something is about* and *how it fits together* — not mirror the code. Avoid referencing specific function names, variable names, or implementation details that change with every refactor. If renaming a function would break the doc, the doc is too specific. Write at the level of concepts, responsibilities, and flows — the code is the source of truth for specifics.
-- **Call out non-obvious constraints.** Ordering requirements, side effects, who owns what, what must not be called from where. This is where docs earn their keep.
-- **Prefer tables for enumerable things** (endpoints, exports, env vars, types).
-- **ASCII diagrams for flows** when they help. One small diagram beats three paragraphs.
-- **Link, don't duplicate.** Every fact lives in exactly one doc; everyone else links to it. If something's explained elsewhere, link to it. Cross-link related docs.
-- **Don't paste code into docs.** A code block copied from the source is a drift bomb — wrong the moment the source changes, and nothing flags it. Point at the code instead ("see the retry logic in `packages/queue/src/runner.ts`") and describe shapes in prose or tables. The one exception is small illustrative fragments that don't mirror real source (e.g. an example request payload).
-- **Use file paths as references** like `apps/api/src/webhooks/github.controller.ts` so a reader (or agent) can jump straight to the code.
-- **Length follows complexity, not the template.** A simple process gets a sentence, not a paragraph — "validates the payload, then enqueues it for the worker" can be the *entire* description of a simple flow. Spend words only where a reader would otherwise be surprised: constraints, ordering, ownership, the why. Filling out a section just because the heading exists is how docs bloat.
-- **Be terse.** If a section has one bullet, it probably belongs inline in another section. If a doc is under ~20 lines, consider folding it into a neighbor.
-
-Length target: most docs land between 40 and 200 lines. A subsystem deep-dive can go longer if genuinely needed.
-
-After drafting, do a **cut pass**: reread each sentence asking "what would a reader do differently because of this?" Cut the ones with no answer — restating what the code makes obvious, defining terms every developer knows, or narrating a process any reader would assume. The draft you keep should feel slightly too short.
-
-Do **not**:
-
-- Rewrite the source code in prose.
-- Add changelog entries or "Recent changes" sections (that's what git log is for).
-- Include TODOs or author tags.
-- Start every file with a giant ToC — it's clutter for short files.
+Then do a **cut pass**: for each sentence, ask what a reader would do differently because of it. Cut the ones with no answer. The result should feel slightly too short.
 
 ### 6. Update `INDEX.md`
 
-`INDEX.md` is the front door. Every time a doc file is created, renamed, or removed, update it. Keep entries short: one line per doc with a hook sentence. If the project already has a specific INDEX format (numbered read order, grouped sections), match that format.
+On every create, rename, or remove: one line per doc with a hook, in the project's existing format (grouping, read order).
 
-If there's no `INDEX.md` yet, create one the first time you add a doc. Base the structure on whatever docs exist.
+### 7. Verify and report
 
-### 7. Verify, then report
-
-Quick consistency pass before reporting: every file in `docs/` has an `INDEX.md` entry, every `INDEX.md` entry points to a file that exists, and the cross-links you added resolve. A broken front door undoes the rest of the work.
-
-Then give the user a short summary: which docs were created, which were updated, which existing docs you *didn't* touch but flagged as possibly affected (so they can double-check). One short paragraph or a bulleted list.
+Check every file in `docs/` has an `INDEX.md` entry, every entry resolves, and new cross-links resolve. Then report in a short list: created, updated, and possibly affected docs left untouched.
 
 ### 8. Close the spec loop
 
-`.specs/` (at the repo root) holds working specs that this skill's siblings — `feature-brainstorm` and `feature-spec` — write while a feature is in flight. A spec is only truly "complete" when the change has shipped *and* been documented. This skill is the place where that loop closes.
+`.specs/` holds in-flight specs from `feature-brainstorm` / `feature-spec`; shipping and documenting a change completes them. Skip silently if there's no `.specs/` or no plausible match. Ignore files starting with `_` (drafts). Ask with `AskUserQuestion` when available.
 
-After step 7, do a quick check:
-
-- **Glob `.specs/*/SPEC_PLAN.md`.** For each one, read the unchecked items (`- [ ]`). If any unchecked item plausibly matches what was just documented (the sub-feature name appears in the changed files, the doc updates, or the commit message), ask the user to confirm completion (*Mark complete* / *Not yet*). If yes, flip the checkbox from `- [ ]` to `- [x]` and append a one-line note (e.g., `— shipped in commit abc1234`).
-- **Also check standalone specs** (`.specs/*.md` outside subdirectories). If a feature name matches what was just documented, ask whether to *Delete the spec file*, *Keep it*, or *Leave it for me to handle*. Default to keeping; never delete without explicit confirmation. When the user picks delete, delete its page `.specs/<slug>.spec.html` with it.
-- **Skip files that start with `_`** in both checks: they are drafts and notes, not specs (a `_<slug>.draft.md` is a spec still in review).
-
-When asking either of these, prefer `AskUserQuestion` if available. If `.specs/` doesn't exist or there's no plausible match, skip silently — the loop closes only when there's something to close.
-
-## Handling ambiguity
-
-- **No `docs/` folder exists yet** → create it, seed with `INDEX.md` and whichever doc types fit the changes in scope. Don't over-scaffold — only create the docs the current changes need.
-- **User's project uses a different convention** (e.g. docs live in `documentation/` or inside each package as `README.md`) → follow the project's convention. This skill's table is a default, not a requirement.
-- **Monorepo with per-package docs** → if packages already have their own READMEs, update those in place; use root `docs/` for cross-cutting concerns.
-- **Private/generated files in the diff** (lockfiles, `.d.ts` outputs, snapshots) → skip silently.
-- **Commit touches many files across unrelated areas** → group by domain and document each group, rather than one giant file-by-file list.
-
-## Examples
-
-**Example 1 — default (latest commit):**
-User: "doc what I just committed"
-→ Run `git show --name-only HEAD`. See that `apps/api/src/webhooks/github.controller.ts` and `packages/shared/src/trigger-event.ts` changed. Update `docs/API.md` with the new endpoint, update `docs/data-model.md` if `TriggerEvent` shape shifted, update `INDEX.md` only if a new doc was added.
-
-**Example 2 — explicit files:**
-User: "document packages/agent/src/providers/claude.ts and packages/agent/src/workspace.ts"
-→ These are subsystem-level. Check if `docs/design-docs/agent-execution.md` already covers them. If yes, update. If no, either extend an existing doc or create a new subsystem deep-dive; update `INDEX.md` only if a new file is added.
-
-**Example 2b — new top-level directory:**
-User commits a new `apps/scheduler/` service.
-→ Update `STRUCTURE.md` with the new directory and one-line notes per subdir, update `ARCHITECTURE.md` with the responsibility + how it fits the data flow, update `INDEX.md` only if new docs were added.
-
-**Example 3 — UI change:**
-User: "doc the new canvas styling"
-→ Read the Tailwind config (`tailwind.config.*` or CSS `@theme`) and the changed component files. Update `docs/FRONTEND.md` for structure and `docs/DESIGN.md` for tokens (palette, typography, radii) — both, since visual changes are dual-natured.
+- **`.specs/*/SPEC_PLAN.md`** — for an unchecked `- [ ]` item matching what was documented (by name in the changed files, docs, or commit message), ask *Mark complete* / *Not yet*. On yes, check it and append `— shipped in commit <sha>`.
+- **Standalone `.specs/*.md`** — on a match, ask *Delete the spec file* / *Keep it* / *Leave it for me to handle*. Default to keeping; delete only on explicit confirmation, along with its `.specs/<slug>.spec.html`.
