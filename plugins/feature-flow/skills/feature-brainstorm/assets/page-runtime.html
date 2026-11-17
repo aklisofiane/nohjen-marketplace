@@ -91,7 +91,7 @@
   .bs .option .explain { padding: 10px; border-radius: 10px; }
   .bs .option .explain figcaption { margin-bottom: 8px; }
 
-  /* Report pages: a status line, counts, one full-width card per phase, the open review findings, what to test by hand.
+  /* Report pages: a status line, counts, one full-width card per phase, the open review findings, the non-blocking findings, what to test by hand.
      Scoped to the page's top level, so classes inside an option's sketch never pick these up. */
   .bs > .status { margin: 0 0 12px; max-width: 760px; font-size: 16.5px; font-weight: 600; }
   .bs > .status[data-verdict="pass"] { color: var(--pro); }
@@ -121,8 +121,8 @@
   .bs-phases .shot figcaption { padding: 6px 10px; border-top: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--ink-2); }
   .bs-phases .out { margin: 0; padding: 8px 10px; overflow-x: auto; border-radius: 8px; background: var(--surface-2); font: 12px/1.5 var(--mono); color: var(--ink-2); white-space: pre-wrap; }
   .ph-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; }
-  .bs > .review, .bs > .manual { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  .bs > .review li, .bs > .manual li { padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; color: var(--ink-2); }
+  .bs > .review, .bs > .noted, .bs > .manual { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .bs > .review li, .bs > .noted li, .bs > .manual li { padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; color: var(--ink-2); }
   .bs > .review li.fixed { background: none; border-style: dashed; color: var(--ink-3); }
 
   /* Spec mode: the markdown, one block per ## heading, with key points, explainers and question cards */
@@ -359,7 +359,7 @@
         noteBtn.onclick = () => { p.note.hidden = false; p.note.focus(); };
       });
     }
-    [['review', 'Code review'], ['manual', 'Test by hand']].forEach(([cls, name]) => {
+    [['review', 'Code review'], ['noted', 'Noted'], ['manual', 'Test by hand']].forEach(([cls, name]) => {
       const list = main.querySelector(`:scope > ul.${cls}`);
       if (list) list.before(heading(name));
     });

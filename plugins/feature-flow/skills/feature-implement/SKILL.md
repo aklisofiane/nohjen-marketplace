@@ -86,7 +86,7 @@ This session coordinates. It spawns agents, routes findings and reads verdicts; 
 
    Disjoint units of one phase run in parallel, sent in one message. **Hard rule: parallel agents never edit overlapping files** — if you can't guarantee that, go sequential.
 2. **Verifier** — a `feature-flow:spec-verifier` agent (see *The verifier*) with the spec path, the phase's *Changes* items, the base commit and the earlier phases' names. Never the implementer's report.
-3. **Fail** — forward the verdict's findings word for word to the same implementer with `SendMessage`, then ask the same verifier to check again. Up to 2 fix rounds; after that the run stops, and the report shows the failing phase.
+3. **Fail** — forward the verdict's *Findings* (the blocking ones; *Noted* stays for the report) word for word to the same implementer with `SendMessage`, then ask the same verifier to check again. Up to 2 fix rounds; after that the run stops, and the report shows the failing phase.
 4. **Pass** — start the next phase, with anything learned (a convention, a file that moved) folded into its implementers' prompts.
 
 Keep a map of which implementer changed which files (their reports, and `git status --porcelain` after each phase): fixes go to the file's owner.
@@ -99,7 +99,7 @@ The trade-off: the user sees every edit, but a long spec can exhaust the context
 
 ## The verifier
 
-`feature-flow:spec-verifier` is this plugin's agent for checking code against a spec. Claude Code keeps it from editing (it has no Edit or Write), while it keeps Bash for the project's checks and whatever browser tool the session has for screenshots. It returns a verdict in a fixed shape: pass or fail, each *Changes* item as done, partial or missing with `file:line`, edits outside the scope, the checks it ran, proof (screenshots, test runs, or what to check by hand), and on a fail, findings written for the implementer.
+`feature-flow:spec-verifier` is this plugin's agent for checking code against a spec. Claude Code keeps it from editing (it has no Edit or Write), while it keeps Bash for the project's checks and whatever browser tool the session has for screenshots. It returns a verdict in a fixed shape: pass or fail, each *Changes* item as done, partial or missing with `file:line`, edits outside the scope, the checks it ran, proof (screenshots, test runs, or what to check by hand), on a fail the blocking findings written for the implementer, and the non-blocking ones under *Noted*. It fails a phase only for what a user would notice or a check that breaks; on a phase it runs the tests related to the change, and on the whole spec the full suite.
 
 Spawn it with this prompt:
 
@@ -119,7 +119,7 @@ There before the run: <files, or none>
 A phase is not done until it passes this gate, no matter who did the work:
 
 - **Team mode:** the verifier's verdict is the gate. You read verdicts; you don't re-verify by reading diffs, and an implementer's "done" is a claim, not evidence.
-- **Session mode:** run the project's checks (tests, typecheck, lint; whatever the repo uses) and confirm each of the phase's *Changes* items exists in the code.
+- **Session mode:** run the project's analyze, typecheck and lint, and the tests related to the changed files (whatever the repo uses; the full suite waits for the *Final check*), and confirm each of the phase's *Changes* items exists in the code.
 
 If the gate fails, fix within the phase before moving on — never stack a new phase on unverified work.
 
@@ -129,7 +129,7 @@ After the last phase, in both modes:
 
 1. **Whole-diff verifier** — `spec-verifier` on the whole spec, grouped by phase. It catches what one phase broke in another; in session mode it's the only independent read. A fail gets fix rounds as a phase does (up to 2).
 2. **`/code-review` once**, on the run's changes (the current diff, since nothing was committed). It picks its own range, so when the branch was already ahead of what it diffs against, keep only findings in files the run changed. Fix its high-confidence findings before the report — in team mode, send each to the implementer that owns the file, or to a new `general-purpose` agent with the finding and the file if that one can't be resumed; in session mode, fix them here. If the session has no `/code-review`, say so on the report.
-3. **Whole-diff verifier once more**, by `SendMessage` to the same one. If a review fix broke something, it gets what's left of the fix rounds (2 in all for the final check); after that the run stops, and the report shows the failing phase.
+3. **Whole-diff verifier once more**, by `SendMessage` to the same one, only when a review fix changed a file; with none, the verdict from step 1 stands. If a review fix broke something, it gets what's left of the fix rounds (2 in all for the final check); after that the run stops, and the report shows the failing phase.
 
 In session mode, the report's phase cards come from this verdict, grouped by phase.
 
@@ -183,6 +183,10 @@ The content (when the brainstorm page's markup changes in `feature-brainstorm`, 
   <li class="fixed">3 findings fixed before this report</li>
 </ul>
 
+<ul class="noted">
+  <li>Phase 2 · <a non-blocking finding> <code>file:line</code></li>
+</ul>
+
 <ul class="manual">
   <li><what to check by hand, and why the verifier couldn't></li>
 </ul>
@@ -197,8 +201,9 @@ The content (when the brainstorm page's markup changes in `feature-brainstorm`, 
 
 - Write text as HTML: wrap code and paths in `<code>`, and escape `<`, `>` and `&`.
 - **Counts:** phases, files changed (`git diff --name-only <base>` plus untracked files), fix rounds across the run, checks the verifiers ran.
-- **A phase card** takes its items, checks and proof from that phase's last verdict (in session mode, from the whole-diff verdict's group for it). One `figure.shot` per screenshot, one `pre.out` per check or test run. The runtime adds the verdict tag, *Checked by spec-verifier* and *Add note*.
+- **A phase card** takes its items, checks and proof from that phase's last verdict, plus any screenshots the whole-diff verdict took for it (a phase that isn't mainly UI defers them there); in session mode, all from the whole-diff verdict's group for it. One `figure.shot` per screenshot, one `pre.out` per check or test run. The runtime adds the verdict tag, *Checked by spec-verifier* and *Add note*.
 - **Code review** lists only the findings still open that are high-impact or blocking, plus one `li.fixed` with the count fixed before the report. Leave minor and low-confidence findings off. No open findings: just the `li.fixed` line. No `/code-review` in the session: one line saying so.
+- **Noted** gathers the *Noted* lines from each phase's last verdict and the whole-diff one, without repeats, each with its phase; leave the list out when there are none.
 - **Test by hand** comes from the verdicts' "check by hand" lines; leave the list out when there are none.
 - Preselect *Document now* when every phase passed and *Fix something* when one didn't; never preselect *Later*. The runtime adds *Other*; never write it.
 
