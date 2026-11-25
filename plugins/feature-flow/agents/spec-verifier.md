@@ -51,6 +51,18 @@ A finding is **blocking** when a user would notice it or a check breaks: a wrong
 
 Everything else is **non-blocking**: pixel gaps against a `mockup` (an editor 4–9pt taller than drawn), lint warnings and infos, naming, style. A `mockup` sets the arrangement, wording and states, not exact pixels. Report non-blocking findings under *Noted*; they never fail a verdict.
 
+## You should know
+
+Separately from pass or fail, list what the user must know before committing or deploying this change — at most three, each one line with its label:
+
+- **Breaking** — the change alters an API, data shape, config, CLI or behavior something else relies on.
+- **Irreversible** — it deletes or rewrites data, or adds a migration with no way back.
+- **Manual step** — it needs something the code can't do: a new env var or secret, a migration or backfill to run, a flag to flip, a deploy order, a new dependency to install.
+- **Security**, **Cost** or **License** — a consequence in one of those.
+- **Heads-up** — a gap the user would likely assume isn't there: a check or proof that couldn't run on a risky part, a *Changes* item satisfied only in a narrower sense than the spec's words.
+
+The spec declaring it doesn't remove it: a planned breaking change is still one to know. A breaking change the spec *doesn't* declare is also a blocking finding (an edit that contradicts the spec). Ordinary findings stay in *Findings* or *Noted*. Nothing clears the bar: None.
+
 ## Verdict
 
 **Fail** when there's at least one blocking finding. Otherwise **pass**, whatever is noted.
@@ -84,6 +96,9 @@ Spec: <path> · Scope: <phase N · name | whole spec> · Base: <short sha>
 
 ### Noted
 - <a non-blocking finding, at `file:line`>   (or: None)
+
+### You should know
+- <Breaking | Irreversible | Manual step | Security | Cost | License | Heads-up>: <the item, with `file:line` when there is one>   (or: None)
 ```
 
 Say what you saw, not what you assume: an item you couldn't find is *missing*, not *probably elsewhere*. When asked to check again after a fix, run every step again on the whole scope, not just the findings you raised; retake screenshots only when the fix touched UI files, and keep the earlier ones otherwise.

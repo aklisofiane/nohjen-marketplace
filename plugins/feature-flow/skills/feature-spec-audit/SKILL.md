@@ -1,6 +1,6 @@
 ---
 name: feature-spec-audit
-description: Use this skill when the user wants to check coherence across an umbrella spec — multiple sub-specs under `.specs/<umbrella>/` that were written one at a time and may now contradict each other or have gaps. Trigger on "audit my umbrella spec", "check coherence", "do my specs contradict each other", "review .specs/<name> for drift", "is anything missing in my umbrella", or before implementing across an umbrella ("I'm ready to start implementing the auth umbrella" — recommend an audit first). Read-only: reports findings with file paths and quoted excerpts; does not edit spec files (can save the report to `_audit.md` on request). Skip for standalone (non-umbrella) specs and for code/docs drift checks.
+description: Use to check an umbrella spec (`.specs/<umbrella>/` with a SPEC_PLAN.md and several sub-specs) for contradictions, gaps, plan drift and open questions — "audit my umbrella spec", "do my specs contradict each other", "check .specs/auth for drift", "is anything missing", or before implementing a whole umbrella. Read-only: a chat report with file paths and quoted excerpts; saves it to `_audit.md` only on request. Not for a single standalone spec, or for spec-vs-code or spec-vs-docs drift.
 ---
 
 # Feature Spec Audit
@@ -72,6 +72,9 @@ Surface unresolved blockers that `feature-spec` itself flags as blocking impleme
 Render a chat report grouped by pass, with **global numbering across all findings**:
 
 ```
+**⚠ You should know**                       (only when a finding clears the bar; otherwise leave it out)
+- <label>: <one line> — see <finding number>
+
 **Umbrella:** .specs/<name>/  (<N> sub-specs reviewed)
 
 ## Contradictions (<count>)
@@ -99,6 +102,8 @@ Render a chat report grouped by pass, with **global numbering across all finding
 ```
 
 **Severity is not confidence.** Confidence says how sure you are the finding is real; severity says whether it blocks implementation. A high-confidence naming mismatch (`users.email` vs `users.email_address`) is cosmetic — easy to fix, unlikely to derail anything. A data-shape contradiction (JWT sessions vs server-side rows) is blocking — implementing either side bakes in a decision the specs never made. When findings differ in impact, say which are blocking in the closing line so the user can prioritize; that's triage, not a proposed fix.
+
+**You should know** is a step past blocking: a finding that would hurt if implemented as written. Two sub-specs planning incompatible migrations on one table (**Irreversible**), a sub-spec changing an API another treats as stable (**Breaking**), a cross-cutting security rule one sub-spec ignores (**Security**). At most three, each pointing at its finding by number, with the bar and labels from `<this skill's directory>/../../shared/answerable-page.md`. Most audits have none.
 
 If a section has zero findings, **omit it entirely** — don't print empty headers. If all four sections have zero findings, output one line and stop:
 

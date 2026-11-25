@@ -1,7 +1,7 @@
 </script>
-<!-- feature-flow page runtime, shared by brainstorm, bug, spec and report pages. Appended to the end of a page with `cat`;
-     turns the markup from feature-brainstorm › "Output format", feature-spec › "The spec page" or feature-implement ›
-     "The report page" into a page the user answers in place (picks, notes, Respond). A page that carries
+<!-- feature-flow page runtime, shared by brainstorm, bug, spec and report pages. Appended to the end of a page by
+     shared/build-page.sh; turns the markup in shared/answerable-page.md into a page the user answers in place
+     (picks, notes, Respond). A page that carries
      <script type="text/markdown"> is a spec page; any other runs in brainstorm mode, where a report page is one with
      section.phase cards and no .option. The </script> above closes a spec page's markdown block; other pages ignore it.
      Keep it self-contained: the desktop side panel loads pages as standalone copies, so linked files would not load. -->
@@ -10,7 +10,7 @@
   :root {
     --bg: #f6f5f1; --surface: #fff; --surface-2: #efede7; --ink: #1d1c1a; --ink-2: #55524c; --ink-3: #8a867e;
     --line: #e2dfd6; --accent: #b4541f; --accent-soft: #fbf1ea; --on-accent: #fff; --pro: #2c7a4d; --con: #b03a2c;
-    --warn: #a2741c; --term: #1a1c1e; --term-ink: #d9dbd4;
+    --warn: #a2741c; --term: #1a1c1e; --term-ink: #d9dbd4; --know: #c0271a;
     --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
@@ -18,7 +18,7 @@
     :root:not([data-theme="light"]) {
       --bg: #131312; --surface: #1c1c1a; --surface-2: #252522; --ink: #ecebe5; --ink-2: #b2afa6; --ink-3: #7e7b73;
       --line: #33322e; --accent: #e08a5c; --accent-soft: #2a1d16; --on-accent: #1a0f09; --pro: #7fcb9c; --con: #ec8c7c;
-      --warn: #dcb26a; --term: #0c0d0e;
+      --warn: #dcb26a; --term: #0c0d0e; --know: #ff7b6b;
     }
   }
   * { box-sizing: border-box; }
@@ -45,6 +45,18 @@
   .pg-sheet > div { width: min(640px, 100%); max-height: 86vh; display: flex; flex-direction: column; gap: 12px; padding: 18px; background: var(--surface); border-radius: 14px; }
   .pg-sheet pre { margin: 0; flex: 1; overflow: auto; padding: 12px; background: var(--surface-2); border-radius: 8px; font: 12.5px/1.55 var(--mono); white-space: pre-wrap; }
   .pg-sheet .row { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* You should know: the few things the reader must not miss (a breaking change, an irreversible step, a manual step).
+     The page-level list leads the page in a red box; one inside an option stays in that option's card. */
+  .pg .know { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .pg .know li { position: relative; padding: 9px 12px 9px 34px; border: 1px solid color-mix(in srgb, var(--know) 45%, transparent); border-left: 4px solid var(--know); border-radius: 8px; background: color-mix(in srgb, var(--know) 9%, var(--surface)); font-size: 14px; color: var(--ink); }
+  .pg .know li::before { content: "!"; position: absolute; left: 11px; top: 10px; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 99px; background: var(--know); color: var(--surface); font: 700 11px/1 var(--sans); }
+  .pg .know b, .pg .know strong { color: var(--know); }
+  .pg-know { margin: 22px 0 6px; padding: 14px 16px 16px; border: 2px solid var(--know); border-radius: 14px; background: color-mix(in srgb, var(--know) 5%, var(--surface)); }
+  .pg-know > .pg-h { margin: 0 0 10px; color: var(--know); font-size: 12.5px; }
+  .sp .pg-know { margin-bottom: 20px; }
+  .pg .option .know li { padding: 7px 10px 7px 30px; font-size: 13.5px; }
+  .pg .option .know li::before { left: 9px; top: 8px; }
 
   /* Brainstorm mode: options, a pick, follow-up questions */
   .bs h1 { font-size: clamp(24px, 3.4vw, 32px); line-height: 1.2; letter-spacing: -.01em; margin: 0 0 10px; }
@@ -238,6 +250,15 @@
     main.appendChild(card);
     return choice(card);
   };
+  // The page-level You should know (a top-level ul.know) goes in a red box right under the page's head
+  const know = (main, after) => {
+    const list = main.querySelector(':scope > ul.know');
+    if (!list) return;
+    const box = el('section', 'pg-know');
+    box.setAttribute('role', 'note');
+    box.append(heading('⚠ You should know'), list);
+    if (after) after.after(box); else main.prepend(box);
+  };
   const nextBlock = (L, nx) => { if (nx) L.push('', '## Next step', nx.answer('').replace(/^→ /, '')); };
 
   // A choice card (fieldset.ask or fieldset.next): tag the suggested answer and add an Other choice with a text box;
@@ -288,6 +309,7 @@
     if (goal) goal.prepend(el('b', '', 'Goal: '));
     const context = main.querySelector('.context');
     if (context) context.before(heading('Context'));
+    know(main, $$(':scope > h1, :scope > .goal, :scope > .status, :scope > .counts', main).pop());
 
     const recEl = main.querySelector('.recommendation');
     const optEls = $$('.option', main);
@@ -538,6 +560,7 @@
     const title = h1.textContent.trim();
     if (!document.title) document.title = title;
     extra.forEach(n => main.appendChild(n));
+    know(main, h1);
     const slots = b => b.qs.map(n => `<div class="sp-slot" data-q="${n}"></div>`).join('');
     if (intro.length) main.appendChild(el('div', 'sp-body', intro.map(b => b.html + slots(b)).join('')));
 

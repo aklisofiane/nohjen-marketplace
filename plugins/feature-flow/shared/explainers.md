@@ -6,7 +6,7 @@ An explainer is one picture for the person reading a page. On the spec page it s
 
 - **Draw** when a flow, state or structure is hard to follow from text: data moving between stores, a lifecycle with a few states, a request crossing services, what happens over time, a before/after of a structure.
 - **Don't draw** when the prose already carries it, to restate a list of changes, or to decorate a section. Most specs need none; a large one, one or two. At most one per section.
-- **A UI the spec builds is a mockup in the md, not an explainer** (see `ui-mockups.md`): the implementor needs it as much as the reviewer does.
+- **A UI the spec builds is a mockup in the md, not an explainer** (see `../skills/feature-spec/references/ui-mockups.md`): the implementor needs it as much as the reviewer does.
 
 ## The eli5 rule
 
@@ -61,7 +61,7 @@ Arrowheads are markers defined once per explainer, then used with `marker-end`:
 
 ## In a brainstorm option
 
-A picture inside an option, above `.how`, shows that option's shape; the brainstorm's *Visual sketches* section says when an option gets one. The rules above hold, with these differences:
+A picture inside an option, above `.how`, shows that option's shape; the brainstorm's *Visual sketches* section (and the bug fix page) says when an option gets one. The rules above hold, with these differences:
 
 - **No `data-section`.** The figure sits in the option's markup, where it shows.
 - **A `viewBox` about 360 wide.** With two or three options a column is 300 to 480px; a 520-wide picture would shrink its 12px text below 8px. The height is whatever the picture needs, usually 100 to 180.
@@ -83,7 +83,7 @@ A picture inside an option, above `.how`, shows that option's shape; the brainst
 
 ## Worked example: run retention
 
-The spec in `example-spec.md` archives old runs. The hard idea in its *Approach* is: old runs move out of the busy table, but their links keep working. One picture, about 25 words:
+The spec in `../skills/feature-spec/references/example-spec.md` archives old runs. The hard idea in its *Approach* is: old runs move out of the busy table, but their links keep working. One picture, about 25 words:
 
 ```html
 <figure class="explain" data-section="Approach">
