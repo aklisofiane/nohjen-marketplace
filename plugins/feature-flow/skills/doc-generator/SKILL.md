@@ -1,6 +1,6 @@
 ---
 name: doc-generator
-description: Generate or update project documentation from the latest git commit or from files passed as arguments. Use when the user asks to document their code, refresh or update the docs, write an API, data-model or design/UI doc, or says "document what I just changed", "doc these files", "add documentation for X". Writes terse markdown for humans and agents into the project's `docs/`, following its existing conventions, and keeps the index in sync.
+description: Generate or update project documentation from the latest git commit or from files passed as arguments. Use when the user asks to document their code, refresh or update the docs, write an API, data-model or design/UI doc, or says "document what I just changed", "doc these files", "add documentation for X". Writes terse markdown into the project's `docs/`, following its conventions, keeps the index in sync, and offers to close a matching spec in `.specs/`.
 ---
 
 # Doc Generator
@@ -76,9 +76,11 @@ On every create, rename, or remove: one line per doc with a hook, in the project
 
 Check every file in `docs/` has an `INDEX.md` entry, every entry resolves, and new cross-links resolve. Then report in a short list: created, updated, and possibly affected docs left untouched.
 
+Lead the report with a `**⚠ You should know**` block (at most three lines, otherwise leave it out) when documenting surfaced something the user must act on: the docs now record a **Breaking** change to an API, data shape or config that consumers rely on; a **Manual step** (a new required env var, secret or migration) that the README or setup docs now demand; or a **Heads-up** that existing docs contradict the code in a way you couldn't settle from the code alone.
+
 ### 8. Close the spec loop
 
 `.specs/` holds in-flight specs from `feature-brainstorm` / `feature-spec`; shipping and documenting a change completes them. Skip silently if there's no `.specs/` or no plausible match. Ignore files starting with `_` (drafts). Ask with `AskUserQuestion` when available.
 
 - **`.specs/*/SPEC_PLAN.md`** — for an unchecked `- [ ]` item matching what was documented (by name in the changed files, docs, or commit message), ask *Mark complete* / *Not yet*. On yes, check it and append `— shipped in commit <sha>`.
-- **Standalone `.specs/*.md`** — on a match, ask *Delete the spec file* / *Keep it* / *Leave it for me to handle*. Default to keeping; delete only on explicit confirmation, along with its `.specs/<slug>.spec.html`.
+- **Standalone `.specs/*.md`** — on a match, ask *Delete the spec file* / *Keep it* / *Leave it for me to handle*. Default to keeping; delete only on explicit confirmation, along with the pages beside it (`.specs/<slug>.spec.html`, `.specs/<slug>.brainstorm.html`, `.specs/<slug>.report.html`, whichever exist).
