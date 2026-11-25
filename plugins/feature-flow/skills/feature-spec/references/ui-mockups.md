@@ -6,7 +6,7 @@ A mockup is a small piece of HTML in the spec's md that shows a UI the spec adds
 
 - **Draw** for any new or changed component, screen or layout: a panel, row, form, dialog, banner, menu, or a rearrangement of existing ones.
 - **Don't draw** for a copy, color or behaviour-only change, or for a layout that stays as it is.
-- **Not a mockup:** a flow's order, a before/after structure, code or terminal output. Those stay ASCII sketches (`ascii-sketches.md`); a flow worth a picture on the page is an explainer (`explainers.md`).
+- **Not a mockup:** a flow's order, a before/after structure, code or terminal output. Those stay ASCII sketches (`ascii-sketches.md`); a flow worth a picture on the page is an explainer (`../../../shared/explainers.md`).
 
 ## The fence
 
