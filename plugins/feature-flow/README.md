@@ -21,7 +21,7 @@ Decisions happen on **answerable pages**: HTML pages that open beside the chat. 
                    │      (umbrella only: contradictions
                    │       between sub-specs)
                    ▼
-          feature-implement ──► spec-verifier gates each phase
+          feature-implement ──► each phase gated (spec-verifier in team mode)
           session or team of agents        + whole diff + /code-review
                    │
                    ▼
@@ -42,13 +42,13 @@ Skills trigger from what you say. You can also call one directly, e.g. `/feature
 | **feature-brainstorm** | You want to add or change something and the approach isn't decided. *"How should we add notifications?"* | It reads the codebase and checks your stack's libraries, then puts 2-3 grounded options with a recommendation on a page. A feature too big for one choice becomes an umbrella plan (`.specs/<feature>/SPEC_PLAN.md`) of sub-features, each brainstormed in turn. |
 | **feature-spec** | The direction is chosen and you want it written down before coding. *"Spec this out."* | A markdown spec (goal, approach, changes, open questions, out of scope), with UI mockups and phases when needed. You review it on a page where every unclear point is a question. Then you save it, revise it, or go straight to implementing. |
 | **feature-spec-audit** | You have an umbrella with several sub-specs. *"Do my specs contradict each other?"* | A read-only report in chat: contradictions, gaps, plan drift and open questions, with file paths and quotes. Saved to `_audit.md` only if you ask. |
-| **feature-implement** | A spec should become code. *"Implement `.specs/archive-runs.md`."* | It plans the phases and lets you pick: run in this session, or a team of agents that this session coordinates. The `spec-verifier` gates every phase, then the whole diff gets a final check and `/code-review`. It ends with a report page: each phase, its proof and screenshots, what to check by hand. |
+| **feature-implement** | A spec should become code. *"Implement `.specs/archive-runs.md`."* | It plans the phases and lets you pick: run in this session, or a team of agents that this session coordinates. In team mode the `spec-verifier` gates every phase (in session mode, this session runs the checks); either way the `spec-verifier` then checks the whole diff and `/code-review` runs. It ends with a report page: each phase, its proof and screenshots, what to check by hand. |
 | **doc-generator** | Code shipped and the docs should match. *"Document what I just changed."* | Short markdown in `docs/` (architecture, API, data model, frontend…) that follows your project's conventions and keeps `docs/INDEX.md` in sync. It then offers to tick the umbrella checkbox or remove the finished spec. |
 | **bug-investigate** | You want a bug's cause found before anything changes. *"Find the root cause, don't fix it yet."* | It traces the bug read-only (reading code, running the failing test, git history, a bisect in a temporary worktree). It names the cause with a confidence (*confirmed*, *likely* or *not found*) and offers 1-3 fixes. Once you pick one, it writes a regression test that fails first, then applies the fix. |
 
 ### Agent
 
-**spec-verifier**: checks code against a spec and returns a pass or fail verdict with proof. It can't edit the project. It reads the diff against a base commit, marks each *Changes* item as done, partial or missing with `file:line`, runs the project's checks, and takes screenshots of the UI states the spec names. `feature-implement` uses it after every phase and on the whole diff. You can also run it yourself: *"check this spec against the code"*.
+**spec-verifier**: checks code against a spec and returns a pass or fail verdict with proof. It can't edit the project. It reads the diff against a base commit, marks each *Changes* item as done, partial or missing with `file:line`, runs the project's checks, and takes screenshots of the UI states the spec names. `feature-implement` uses it on the whole diff, and after every phase in team mode. You can also run it yourself: *"check this spec against the code"*.
 
 ## Answerable pages
 

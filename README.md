@@ -22,8 +22,9 @@ Takes a feature from an open question to shipped, documented code. You answer th
 
 ```
 feature-brainstorm → feature-spec → feature-implement → doc-generator
-   options page       spec page      phases checked by    docs/ updated,
-                                     spec-verifier,       spec closed
+   options page       spec page      phases gated,        docs/ updated,
+                                     spec-verifier on     spec closed
+                                     the whole diff,
                                      report page
 ```
 
