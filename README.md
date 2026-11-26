@@ -14,6 +14,31 @@ Then browse and install:
 /plugin
 ```
 
+## Plugins
+
+### [feature-flow](plugins/feature-flow/README.md)
+
+Takes a feature from an open question to shipped, documented code. You answer the decisions on HTML pages that open beside the chat.
+
+```
+feature-brainstorm → feature-spec → feature-implement → doc-generator
+   options page       spec page      phases checked by    docs/ updated,
+                                     spec-verifier,       spec closed
+                                     report page
+```
+
+| Skill / agent | In one line |
+|---|---|
+| `feature-brainstorm` | 2-3 grounded options with a recommendation, or an umbrella plan for a big feature |
+| `feature-spec` | Writes the chosen direction into `.specs/<slug>.md`, reviewed on a page |
+| `feature-spec-audit` | Read-only check of an umbrella's sub-specs for contradictions and gaps |
+| `feature-implement` | Builds a spec in this session or with a team of agents, and ends with a report page |
+| `doc-generator` | Writes or updates `docs/` from the latest commit or named files |
+| `bug-investigate` | Finds a bug's root cause read-only and offers 1-3 fixes before changing anything |
+| `spec-verifier` (agent) | Gives a pass/fail verdict with proof that code matches a spec, and never edits |
+
+See the [feature-flow README](plugins/feature-flow/README.md) for the full flow, the pages and the `.specs/` layout.
+
 ## Layout
 
 ```
